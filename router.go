@@ -9,6 +9,7 @@ import (
   "regexp"
   "strings"
   "time"
+  "github.com/dgrijalva/jwt-go"
   "github.com/codegangsta/negroni"
   "github.com/auth0/go-jwt-middleware"
   "github.com/golang/protobuf/proto"
@@ -126,8 +127,7 @@ var AuthHeadersOptional = []Header {
 
 /////////////////////////////////////////////////
 // NewRouter creates a new Gorilla/mux router
-func NewRouter(routes Routes, jwtOptionalMiddleware,
-               jwtRequiredMiddleware *jwtmiddleware.JWTMiddleware) *mux.Router {
+func NewRouter(routes Routes) *mux.Router {
 
   // We need to set StrictSlash to "false" (default) to avoid getting
   // routes redirected automatically.
@@ -142,8 +142,7 @@ func NewRouter(routes Routes, jwtOptionalMiddleware,
     for _, method := range route.Methods {
       for _, formatHandler := range method.Handlers {
         createRouteHelper(router, &routes, routeIndex, method.Type, false,
-                          &allowedOptions, formatHandler,
-                          jwtOptionalMiddleware, jwtRequiredMiddleware)
+                          &allowedOptions, formatHandler)
       }
     }
 
@@ -151,8 +150,7 @@ func NewRouter(routes Routes, jwtOptionalMiddleware,
     for _, method := range route.SecureMethods {
       for _, formatHandler := range method.Handlers {
         createRouteHelper(router, &routes, routeIndex, method.Type, true,
-                          &allowedOptions, formatHandler,
-                          jwtOptionalMiddleware, jwtRequiredMiddleware)
+                          &allowedOptions, formatHandler)
       }
     }
   }
@@ -232,20 +230,41 @@ func (fn ProtoResult) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 var corsMap = map[string]int{}
 
-/////////////////////////////////////////////////
-// CreatePEMPublicKeyString creates a public key from a PEM string.
-func CreatePEMPublicKeyString(publicKey string) string {
-  return "-----BEGIN CERTIFICATE-----\n" + publicKey +
-         "\n-----END CERTIFICATE-----"
-}
+var pemKeyString string
+
+// JWT middlewares
+var jwtOptionalMiddleware = jwtmiddleware.New(
+  jwtmiddleware.Options{
+    Debug:               true,
+
+    // See https://github.com/auth0/go-jwt-middleware
+    CredentialsOptional: true,
+
+    SigningMethod:       jwt.SigningMethodRS256,
+
+    ValidationKeyGetter: func(token *jwt.Token) (interface{}, error) {
+      // This method must return a public key or a secret, depending on the
+      // chosen signing method
+      return jwt.ParseRSAPublicKeyFromPEM([]byte(pemKeyString))
+    },
+})
+
+var jwtRequiredMiddleware = jwtmiddleware.New(jwtmiddleware.Options{
+  Debug: true,
+  SigningMethod: jwt.SigningMethodRS256,
+  CredentialsOptional: false,
+  ValidationKeyGetter: func(token *jwt.Token) (interface{}, error) {
+    // This method must return a public key or a secret, depending on the
+    // chosen signing method
+    return jwt.ParseRSAPublicKeyFromPEM([]byte(pemKeyString))
+  },
+})
 
 /////////////////////////////////////////////////
 // Helper function that creates a route
 func createRouteHelper(router *mux.Router, routes *Routes,
                        routeIndex int, methodType string, secure bool,
-                       allowedOptions *[]string, formatHandler FormatHandler,
-                       jwtOptionalMiddleware,
-                       jwtRequiredMiddleware *jwtmiddleware.JWTMiddleware) {
+                       allowedOptions *[]string, formatHandler FormatHandler) {
 
   *allowedOptions = append(*allowedOptions, methodType)
   handler := formatHandler.Handler
