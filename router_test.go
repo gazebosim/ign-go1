@@ -1,4 +1,4 @@
-package igngo
+package ign
 
 import (
   "encoding/json"
@@ -15,7 +15,7 @@ func TestInvalidRoute(t *testing.T) {
   setup()
 
   uri := "/1.0/invalidroute/"
-  myJWT := os.Getenv("IGN_FUEL_TEST_JWT")
+  myJWT := os.Getenv("IGN_TEST_JWT")
   assertRouteMultipleArgs("GET", uri, nil, http.StatusNotFound, &myJWT, "text/plain; charset=utf-8", t)
 }
 

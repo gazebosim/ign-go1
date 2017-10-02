@@ -1,4 +1,4 @@
-package igngo
+package ign
 
 import (
   "net/http"
@@ -77,6 +77,18 @@ const ErrorMissingField      = 3009
 const ErrorOwnerNotInRequest  = 3010
 // ErrorModelNotInRequest is triggered when a model is not found in the request
 const ErrorModelNotInRequest  = 3011
+// ErrorFormMissingFiles is triggered when the expected "file" field is missing
+// in the multipart form request.
+const ErrorFormMissingFiles   = 3012
+// ErrorFormInvalidValue is triggered when a given form field has an invalid
+// value.
+const ErrorFormInvalidValue   = 3013
+// ErrorFormDuplicateFile is triggered when the POSTed model carries duplicate
+// file entries.
+const ErrorFormDuplicateFile  = 3014
+// ErrorFormDuplicateModelName is triggered when the POSTed model carries duplicate
+// model name.
+const ErrorFormDuplicateModelName  = 3015
 
 ////////////////////////////
 // Authorization error codes
@@ -135,7 +147,9 @@ type ErrMsg struct {
   StatusCode int    `json:"-"`
   // Error message.
   Msg        string `json:"msg"`
-
+  // Extra information/arguments associated to Error message.
+  Extra     []string `json:"extra"`
+  // The root cause error
   BaseError   error `json:"-"`
 }
 
@@ -151,6 +165,14 @@ func NewErrorMessage(err int64) (*ErrMsg) {
 func NewErrorMessageWithBase(err int64, base error) (*ErrMsg) {
   em := NewErrorMessage(err)
   em.BaseError = base
+  return em
+}
+
+// NewErrorMessageWithArgs receives an error code, a root error, and a slice
+// of extra arguments, and returns a pointer to an ErrMsg.
+func NewErrorMessageWithArgs(err int64, base error, extra []string) (*ErrMsg) {
+  em := NewErrorMessageWithBase(err, base)
+  em.Extra = extra
   return em
 }
 
@@ -229,7 +251,23 @@ func ErrorMessage(err int64) (ErrMsg) {
       em.Msg = "Missing field in the multipart form"
       em.ErrCode = ErrorForm
       em.StatusCode = http.StatusBadRequest
-     case ErrorUnexpectedID:
+    case ErrorFormMissingFiles:
+      em.Msg = "Missing file field, or empty list of files, in the multipart form"
+      em.ErrCode = ErrorFormMissingFiles
+      em.StatusCode = http.StatusBadRequest
+    case ErrorFormDuplicateFile:
+      em.Msg = "Duplicate file in multipart form"
+      em.ErrCode = ErrorFormDuplicateFile
+      em.StatusCode = http.StatusBadRequest
+    case ErrorFormDuplicateModelName:
+      em.Msg = "Duplicate model name"
+      em.ErrCode = ErrorFormDuplicateModelName
+      em.StatusCode = http.StatusBadRequest
+    case ErrorFormInvalidValue:
+      em.Msg = "Invalid value in field."
+      em.ErrCode = ErrorFormInvalidValue
+      em.StatusCode = http.StatusBadRequest
+    case ErrorUnexpectedID:
       em.Msg = "Unexpected id included in your request"
       em.ErrCode = ErrorUnexpectedID
       em.StatusCode = http.StatusBadRequest

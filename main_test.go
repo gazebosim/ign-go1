@@ -1,4 +1,4 @@
-package igngo
+package ign
 
 import (
   "log"

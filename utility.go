@@ -1,6 +1,8 @@
-package igngo
+package ign
 
 import (
+  "net/http"
+  "github.com/dgrijalva/jwt-go"
   "archive/zip"
   "bytes"
   "errors"
@@ -11,8 +13,25 @@ import (
   "path/filepath"
   "runtime"
   "strconv"
+  "strings"
   "time"
 )
+
+// Returns the user identity found in the http request's JWT token.
+func GetUserIdentity(r *http.Request) (identity string, ok bool) {
+  // We use the claimed subject contained in the JWT as the ID.
+  jwtUser := r.Context().Value("user")
+  if jwtUser == nil {
+    return
+  }
+  var sub interface {}
+  sub, ok = jwtUser.(*jwt.Token).Claims.(jwt.MapClaims)["sub"]
+  if !ok {
+    return
+  }
+  identity, ok = sub.(string)
+  return
+}
 
 // Read an environment variable and return an error if not present
 func ReadEnvVar(name string) (string, error) {
@@ -123,4 +142,19 @@ func Max(x, y int64) int64 {
     return x
   }
   return y
+}
+
+// Returns the slice of strings with all tags parsed from the input string.
+// The input string contains tags separated with commas.
+// E.g. input string: " tag1, tag2,  tag3 "
+// E.g. output: ["tag1", "tag2", "tag3"]
+func StrToSlice(tags string) ([]string) {
+  if tags == "" {
+    return nil
+  }
+
+  noSpaces := strings.Replace(tags, " ", "", -1)
+  noSpaces = strings.TrimPrefix(noSpaces, ",")
+  noSpaces = strings.TrimSuffix(noSpaces, ",")
+  return strings.Split(noSpaces, ",")
 }

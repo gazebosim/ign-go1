@@ -1,4 +1,4 @@
-package igngo
+package ign
 
 import (
   "encoding/json"
@@ -47,7 +47,7 @@ type FormatHandler struct {
 // TypeJSONResult represents a function result that can be exported to JSON
 type TypeJSONResult struct {
   wrapperField string
-  fn *HandlerWithResult
+  fn HandlerWithResult
 }
 
 // ProtoResult provides protobuf serialization for handler results
@@ -161,6 +161,19 @@ func NewRouter(routes Routes, jwtOptionalMiddleware,
 }
 
 /////////////////////////////////////////////////
+// JSONResult provides JSON serialization for handler results
+func JSONResult(handler HandlerWithResult) TypeJSONResult {
+  return TypeJSONResult{"", handler}
+}
+
+/////////////////////////////////////////////////
+// JSONListResult provides JSON serialization for handler results that are
+// slices of objects.
+func JSONListResult(wrapper string, handler HandlerWithResult) TypeJSONResult {
+  return TypeJSONResult{wrapper, handler}
+}
+
+/////////////////////////////////////////////////
 func (fn Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
   if err := fn(w, r); err != nil {
     reportJSONError(w, *err)
@@ -168,21 +181,8 @@ func (fn Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 }
 
 /////////////////////////////////////////////////
-// JSONResult provides JSON serialization for handler results
-func JSONResult(handler *HandlerWithResult) TypeJSONResult {
-  return TypeJSONResult{"", handler}
-}
-
-/////////////////////////////////////////////////
-// JSONListResult provides JSON serialization for handler results that are
-// slices of objects.
-func JSONListResult(wrapper string, handler *HandlerWithResult) TypeJSONResult {
-  return TypeJSONResult{wrapper, handler}
-}
-
-/////////////////////////////////////////////////
 func (t TypeJSONResult) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-  result, err := (*t.fn)(w, r)
+  result, err := t.fn(w, r)
   if err != nil {
     reportJSONError(w, *err)
     return
@@ -233,8 +233,8 @@ func (fn ProtoResult) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 var corsMap = map[string]int{}
 
 /////////////////////////////////////////////////
-// createPEMPublicKeyString creates a public key from a PEM string.
-func createPEMPublicKeyString(publicKey string) string {
+// CreatePEMPublicKeyString creates a public key from a PEM string.
+func CreatePEMPublicKeyString(publicKey string) string {
   return "-----BEGIN CERTIFICATE-----\n" + publicKey +
          "\n-----END CERTIFICATE-----"
 }

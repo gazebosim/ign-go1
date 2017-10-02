@@ -1,4 +1,4 @@
-package igngo
+package ign
 
 // Import this file's dependencies
 import (
@@ -9,6 +9,7 @@ import (
   "log"
   "net/http"
   "time"
+  "github.com/gorilla/mux"
   "github.com/jinzhu/gorm"
   "github.com/auth0/go-jwt-middleware"
   "github.com/dgrijalva/jwt-go"
@@ -18,6 +19,8 @@ import (
 type Server struct {
   /// Global database interface
   Db *gorm.DB
+
+  Router *mux.Router
 
   // Port used for non-secure requests
   HttpPort string
@@ -29,7 +32,9 @@ type Server struct {
 /////////////////////////////////////////////////
 /// Initialize this package
 ///
-func Init(dbUserName, dbPassword, dbAddress, dbName string) (server *Server, err error) {
+func Init(dbUserName, dbPassword, dbAddress, dbName string, routes Routes) (server *Server, err error) {
+
+  log.Printf("\n\n\n\nINIT\n\n\n\n")
 
   var isGoTest bool
 
@@ -62,16 +67,11 @@ func Init(dbUserName, dbPassword, dbAddress, dbName string) (server *Server, err
     log.Println("Running under go test")
     server.initTests()
   }
-  return
-}
-
-// Run the router and server
-func (s *Server) Run(routes Routes) {
 
   // JWT middlewares
   jwtOptionalMiddleware := jwtmiddleware.New(
     jwtmiddleware.Options{
-      Debug:               false,
+      Debug:               true,
 
       // See https://github.com/auth0/go-jwt-middleware
       CredentialsOptional: true,
@@ -81,29 +81,37 @@ func (s *Server) Run(routes Routes) {
       ValidationKeyGetter: func(token *jwt.Token) (interface{}, error) {
         // This method must return a public key or a secret, depending on the
         // chosen signing method
-        pemKeyString := createPEMPublicKeyString(s.Auth0RsaPublickey)
+        pemKeyString := CreatePEMPublicKeyString(server.Auth0RsaPublickey)
         return jwt.ParseRSAPublicKeyFromPEM([]byte(pemKeyString))
       },
   })
 
   jwtRequiredMiddleware := jwtmiddleware.New(jwtmiddleware.Options{
-    Debug: false,
+    Debug: true,
     SigningMethod: jwt.SigningMethodRS256,
     CredentialsOptional: false,
     ValidationKeyGetter: func(token *jwt.Token) (interface{}, error) {
       // This method must return a public key or a secret, depending on the
       // chosen signing method
-      pemKeyString := createPEMPublicKeyString(s.Auth0RsaPublickey)
+      pemKeyString := CreatePEMPublicKeyString(server.Auth0RsaPublickey)
       return jwt.ParseRSAPublicKeyFromPEM([]byte(pemKeyString))
     },
   })
 
+  log.Printf("\n\n\n\n\nCreated Router\n\n\n\n")
   // Create the router
-  router := NewRouter(routes, jwtOptionalMiddleware, jwtRequiredMiddleware)
+  server.Router = NewRouter(routes, jwtOptionalMiddleware,
+                            jwtRequiredMiddleware)
+
+  return
+}
+
+// Run the router and server
+func (s *Server) Run() {
 
   // Start the http webserver
   // Add some HTTP headers for handling preflight CORS requests.
-  log.Fatal(http.ListenAndServe(s.HttpPort, router))
+  log.Fatal(http.ListenAndServe(s.HttpPort, s.Router))
 }
 
 /////////////////////////////////////////////////
@@ -115,6 +123,8 @@ func (s *Server) initTests() {
   if testKey, err := ReadEnvVar("TEST_RSA256_PUBLIC_KEY"); err != nil {
     log.Printf("Missing TEST_RSA256_PUBLIC_KEY. Test with authentication may not work.")
   } else {
+    log.Printf("\n\n\n\n\n TEST KEY", testKey ," \n\n\n\n")
+    log.Println(testKey)
     s.Auth0RsaPublickey = testKey
   }
 }
