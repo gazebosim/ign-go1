@@ -32,7 +32,7 @@ type Server struct {
 /////////////////////////////////////////////////
 /// Initialize this package
 ///
-func Init(dbUserName, dbPassword, dbAddress, dbName string, routes Routes) (server *Server, err error) {
+func Init(dbUserName, dbPassword, dbAddress, dbName string, routes Routes, auth0RSAPublicKey string) (server *Server, err error) {
 
   var isGoTest bool
 
@@ -65,6 +65,7 @@ func Init(dbUserName, dbPassword, dbAddress, dbName string, routes Routes) (serv
     server.initTests()
   }
 
+  server.Auth0RsaPublickey = auth0RSAPublicKey
   pemKeyString = "-----BEGIN CERTIFICATE-----\n" + server.Auth0RsaPublickey +
          "\n-----END CERTIFICATE-----"
 
