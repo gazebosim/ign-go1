@@ -70,8 +70,6 @@ func Init(dbUserName, dbPassword, dbAddress, dbName string, routes Routes, auth0
   pemKeyString = "-----BEGIN CERTIFICATE-----\n" + server.Auth0RsaPublickey +
          "\n-----END CERTIFICATE-----"
 
-  log.Println(pemKeyString)
-
   // Create the router
   server.Router = NewRouter(routes)
 
