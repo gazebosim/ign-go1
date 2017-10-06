@@ -63,11 +63,14 @@ func Init(dbUserName, dbPassword, dbAddress, dbName string, routes Routes, auth0
 
   if isGoTest {
     server.initTests()
+  } else {
+    server.Auth0RsaPublickey = auth0RSAPublicKey
   }
 
-  server.Auth0RsaPublickey = auth0RSAPublicKey
   pemKeyString = "-----BEGIN CERTIFICATE-----\n" + server.Auth0RsaPublickey +
          "\n-----END CERTIFICATE-----"
+
+  log.Println(pemKeyString)
 
   // Create the router
   server.Router = NewRouter(routes)
@@ -92,7 +95,6 @@ func (s *Server) initTests() {
   if testKey, err := ReadEnvVar("TEST_RSA256_PUBLIC_KEY"); err != nil {
     log.Printf("Missing TEST_RSA256_PUBLIC_KEY. Test with authentication may not work.")
   } else {
-    log.Println(testKey)
     s.Auth0RsaPublickey = testKey
   }
 }
