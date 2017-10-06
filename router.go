@@ -235,7 +235,7 @@ var pemKeyString string
 // JWT middlewares
 var jwtOptionalMiddleware = jwtmiddleware.New(
   jwtmiddleware.Options{
-    Debug:               true,
+    Debug:               false,
 
     // See https://github.com/auth0/go-jwt-middleware
     CredentialsOptional: true,
@@ -250,7 +250,7 @@ var jwtOptionalMiddleware = jwtmiddleware.New(
 })
 
 var jwtRequiredMiddleware = jwtmiddleware.New(jwtmiddleware.Options{
-  Debug: true,
+  Debug: false,
   SigningMethod: jwt.SigningMethodRS256,
   CredentialsOptional: false,
   ValidationKeyGetter: func(token *jwt.Token) (interface{}, error) {
