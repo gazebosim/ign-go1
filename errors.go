@@ -1,7 +1,9 @@
 package ign
 
 import (
+  "fmt"
   "net/http"
+  "github.com/satori/go.uuid"
 )
 
 ///////////////////////
