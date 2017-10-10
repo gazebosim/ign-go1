@@ -226,6 +226,11 @@ func AssertBackendErrorCode(testName string, bslice *[]byte, errCode int, t *tes
     t.Fatal("[ErrCode] is different than [expected code]", testName, errMsg.ErrCode, errCode, string(*bslice))
     return
   }
+  if errMsg.ErrID == "" {
+    t.Fatal("ErrMsg ErrID is empty but it should not", testName,
+            string(*bslice))
+    return
+  }
 }
 
 // SameElements returns True if the two given string slices contain the same

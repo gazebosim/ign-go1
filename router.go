@@ -406,7 +406,7 @@ func addCORSheaders(w http.ResponseWriter) {
 // ReportJSONError logs an error message and return an HTTP error including
 // JSON payload
 func reportJSONError(w http.ResponseWriter, errMsg ErrMsg) {
-  log.Println("Error in [" + Trace() + "]\n\t" + errMsg.Msg)
+  log.Println("Error in [" + Trace() + "]\n\t" + errMsg.LogString())
   if errMsg.BaseError != nil {
     log.Printf("Base error: %v", errMsg.BaseError)
   }

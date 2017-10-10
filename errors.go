@@ -151,7 +151,14 @@ type ErrMsg struct {
   Extra     []string `json:"extra"`
   // The root cause error
   BaseError   error `json:"-"`
+  // Generated ID for easy tracking in server logs
+  ErrID  string  `json:"errid"`
 }
+
+// LogString creates a verbose error string
+func (e *ErrMsg) LogString() string {
+  return fmt.Sprintf("[ErrID:%s][ErrCode:%d] %s. Extra: %v", e.ErrID, e.ErrCode, e.Msg, e.Extra)
+ }
 
 // NewErrorMessage is a convenience function that receives an error code
 // and returns a pointer to an ErrMsg.
@@ -185,6 +192,8 @@ func ErrorMessageOK() (ErrMsg) {
 func ErrorMessage(err int64) (ErrMsg) {
 
   em := ErrorMessageOK()
+
+  em.ErrID = uuid.NewV4().String()
 
   switch (err) {
     case ErrorNoDatabase:
