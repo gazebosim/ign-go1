@@ -40,7 +40,7 @@ func Setup(_router *mux.Router) {
 // SendMultipartPOST executes a multipart POST request with the given form
 // fields and multipart files, and returns the received http status code,
 // the response body, and a success flag.
-func SendMultipartPOST(t *testing.T, uri string, jwt string,
+func SendMultipartPOST(testName string, t *testing.T, uri string, jwt string,
   params map[string]string, files []FileDesc) (respCode int,
   bslice *[]byte, ok bool) {
 
@@ -50,7 +50,7 @@ func SendMultipartPOST(t *testing.T, uri string, jwt string,
     // Remove base path
     part, err := writer.CreateFormFile("file", fd.Path)
     if err != nil {
-      t.Fatal("Could not create FormFile", fd.Path, err)
+      t.Fatal("Could not create FormFile. TestName: ", testName, fd.Path, err)
       return
     }
     _, err = io.WriteString(part, fd.Contents)
@@ -60,13 +60,13 @@ func SendMultipartPOST(t *testing.T, uri string, jwt string,
     _ = writer.WriteField(key, val)
   }
   if err := writer.Close(); err != nil {
-    t.Fatal("Could not close multipart form writer", err)
+    t.Fatal("Could not close multipart form writer. TestName: ", testName, err)
     return
   }
 
   req, err := http.NewRequest("POST", uri, body)
   if err != nil {
-    t.Fatal("Could not create POST request", err)
+    t.Fatal("Could not create POST request. TestName", testName, err)
     return
   }
   // Adds the "Content-Type: multipart/form-data" header.
@@ -88,7 +88,7 @@ func SendMultipartPOST(t *testing.T, uri string, jwt string,
   var er error
   b, er = ioutil.ReadAll(respRec.Body)
   if er != nil {
-    t.Fatal("Failed to read the server response", er)
+    t.Fatal("Failed to read the server response. TestName: ", testName, er)
     return
   }
 

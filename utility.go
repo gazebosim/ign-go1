@@ -145,6 +145,7 @@ func Max(x, y int64) int64 {
 }
 
 // Returns the slice of strings with all tags parsed from the input string.
+// All spaces will be removed (even spaces in the 'middle').
 // The input string contains tags separated with commas.
 // E.g. input string: " tag1, tag2,  tag3 "
 // E.g. output: ["tag1", "tag2", "tag3"]
@@ -153,7 +154,8 @@ func StrToSlice(tags string) ([]string) {
     return nil
   }
 
-  noSpaces := strings.Replace(tags, " ", "", -1)
+  noSpaces := strings.TrimSpace(tags)
+  noSpaces = strings.Replace(tags, " ", "", -1)
   noSpaces = strings.TrimPrefix(noSpaces, ",")
   noSpaces = strings.TrimSuffix(noSpaces, ",")
   return strings.Split(noSpaces, ",")

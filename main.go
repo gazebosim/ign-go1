@@ -101,7 +101,7 @@ func (s *Server) initTests() {
 func dbInit(username, password, address, database string) (*gorm.DB, error) {
 
   // Connect to the database
-  url := fmt.Sprintf("%s:%s@tcp(%s)/%s?charset=utf8&parseTime=True&loc=Local",
+  url := fmt.Sprintf("%s:%s@tcp(%s)/%s?charset=utf8&parseTime=True&loc=UTC",
     username, password, address, database)
 
   var err error
