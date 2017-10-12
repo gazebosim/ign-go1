@@ -29,6 +29,9 @@ type Server struct {
   Auth0RsaPublickey string
 }
 
+// gServer is an internal pointer to the Server.
+var gServer *Server
+
 /////////////////////////////////////////////////
 /// Initialize this package
 ///
@@ -39,6 +42,7 @@ func Init(dbUserName, dbPassword, dbAddress, dbName string, routes Routes, auth0
   server = &Server{
     HttpPort: ":8000",
   }
+  gServer = server
 
   isGoTest = flag.Lookup("test.v") != nil
 

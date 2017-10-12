@@ -352,13 +352,12 @@ func createRouteHelper(router *mux.Router, routes *Routes,
 // is present.
 func requireDBMiddleware(w http.ResponseWriter, r *http.Request,
                       next http.HandlerFunc) {
-  /*if DB == nil {
+  if gServer.Db == nil {
     errMsg := ErrorMessage(ErrorNoDatabase)
     reportJSONError(w, errMsg)
   } else {
-    */
     next(w, r)
-  //}
+  }
 }
 
 /////////////////////////////////////////////////
