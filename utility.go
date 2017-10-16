@@ -160,3 +160,48 @@ func StrToSlice(tags string) ([]string) {
   noSpaces = strings.TrimSuffix(noSpaces, ",")
   return strings.Split(noSpaces, ",")
 }
+
+// DatabaseEnvVar
+// UserName: username to login to a database.
+// PassWord: password used to login.
+// Address: address of the database.
+// Name: name of the database, eg: symphony for application, symphony-test for testing.
+type DatabaseEnvVar struct {
+  UserName string
+  Password string
+  Address string
+  Name string
+}
+
+func ReadDatabaseEnvVar()(*DatabaseEnvVar, error) {
+  var username string
+  var pw string
+  var addr string
+  var dbname string
+  var err error
+  var dbEnvVar DatabaseEnvVar
+
+  if username, err = ReadEnvVar("SYMPHONY_DB_USERNAME"); err != nil {
+    return nil, errors.New("Missing SYMPHONY_DB_USERNAME env variable. " +
+      "Database connection will not work")
+  }
+
+  if pw, err = ReadEnvVar("SYMPHONY_DB_PASSWORD"); err != nil {
+    return nil, errors.New("Missing SYMPHONY_DB_PASSWORD env variable." +
+      "Database connection will not work")
+  }
+
+  // Default database
+  if addr, err = ReadEnvVar("SYMPHONY_DB_ADDRESS");
+     addr == ""  || err != nil {
+     addr = "symphony-dev.cpznmiopbczj.us-east-1.rds.amazonaws.com:3306"
+  }
+
+  if dbname, err = ReadEnvVar("SYMPHONY_DB_NAME");
+     dbname == "" || err != nil {
+     dbname = "symphony"
+  }
+
+  dbEnvVar = DatabaseEnvVar{UserName: username, Password: pw, Address: addr, Name: dbname}
+  return &dbEnvVar, nil
+}
