@@ -168,11 +168,11 @@ type DatabaseEnvVar struct {
   Password string
   // Address of the database.
   Address string
-  // Name of the database, eg: symphony for application, symphony-test for testing.
+  // Name of the database.
   Name string
 }
 
-func ReadDatabaseEnvVar()(*DatabaseEnvVar, error) {
+func ReadDatabaseEnvVar(defaultDBAddress string, defaultDBName string)(*DatabaseEnvVar, error) {
   var username string
   var pw string
   var addr string
@@ -193,12 +193,12 @@ func ReadDatabaseEnvVar()(*DatabaseEnvVar, error) {
   // Default database
   if addr, err = ReadEnvVar("IGNITION_DB_ADDRESS");
      addr == ""  || err != nil {
-     addr = "symphony-dev.cpznmiopbczj.us-east-1.rds.amazonaws.com:3306"
+     addr = defaultDBAddress
   }
 
   if dbname, err = ReadEnvVar("IGNITION_DB_NAME");
      dbname == "" || err != nil {
-     dbname = "symphony"
+     dbname = defaultDBName
   }
 
   dbEnvVar = DatabaseEnvVar{UserName: username, Password: pw, Address: addr, Name: dbname}
