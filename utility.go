@@ -160,3 +160,47 @@ func StrToSlice(tags string) ([]string) {
   noSpaces = strings.TrimSuffix(noSpaces, ",")
   return strings.Split(noSpaces, ",")
 }
+
+type DatabaseEnvVar struct {
+  // Username to login to a database.
+  UserName string
+  // Password to login to a database.
+  Password string
+  // Address of the database.
+  Address string
+  // Name of the database.
+  Name string
+}
+
+func ReadDatabaseEnvVar(defaultDBAddress string, defaultDBName string)(*DatabaseEnvVar, error) {
+  var username string
+  var pw string
+  var addr string
+  var dbname string
+  var err error
+  var dbEnvVar DatabaseEnvVar
+
+  if username, err = ReadEnvVar("IGNITION_DB_USERNAME"); err != nil {
+    return nil, errors.New("Missing IGNITION_DB_USERNAME env variable. " +
+      "Database connection will not work")
+  }
+
+  if pw, err = ReadEnvVar("IGNITION_DB_PASSWORD"); err != nil {
+    return nil, errors.New("Missing IGNITION_DB_PASSWORD env variable." +
+      "Database connection will not work")
+  }
+
+  // Default database
+  if addr, err = ReadEnvVar("IGNITION_DB_ADDRESS");
+     addr == ""  || err != nil {
+     addr = defaultDBAddress
+  }
+
+  if dbname, err = ReadEnvVar("IGNITION_DB_NAME");
+     dbname == "" || err != nil {
+     dbname = defaultDBName
+  }
+
+  dbEnvVar = DatabaseEnvVar{UserName: username, Password: pw, Address: addr, Name: dbname}
+  return &dbEnvVar, nil
+}
