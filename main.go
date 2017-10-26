@@ -26,7 +26,7 @@ type Server struct {
   HttpPort string
 
   /// Auth0 public key used for token validation
-  Auth0RsaPublickey string
+  auth0RsaPublickey string
 }
 
 // gServer is an internal pointer to the Server.
@@ -68,16 +68,24 @@ func Init(dbUserName, dbPassword, dbAddress, dbName string, routes Routes, auth0
   if isGoTest {
     server.initTests()
   } else {
-    server.Auth0RsaPublickey = auth0RSAPublicKey
+    server.SetAuth0RsaPublicKey(auth0RSAPublicKey)
   }
-
-  pemKeyString = "-----BEGIN CERTIFICATE-----\n" + server.Auth0RsaPublickey +
-         "\n-----END CERTIFICATE-----"
 
   // Create the router
   server.Router = NewRouter(routes)
 
   return
+}
+
+func (s *Server) Auth0RsaPublicKey() string {
+  return s.auth0RsaPublickey
+}
+
+// Set the Server's Auth0 RSA public key
+func (s *Server) SetAuth0RsaPublicKey(key string) {
+  s.auth0RsaPublickey = key
+  pemKeyString = "-----BEGIN CERTIFICATE-----\n" + s.auth0RsaPublickey +
+         "\n-----END CERTIFICATE-----"
 }
 
 // Run the router and server
@@ -97,7 +105,7 @@ func (s *Server) initTests() {
   if testKey, err := ReadEnvVar("TEST_RSA256_PUBLIC_KEY"); err != nil {
     log.Printf("Missing TEST_RSA256_PUBLIC_KEY. Test with authentication may not work.")
   } else {
-    s.Auth0RsaPublickey = testKey
+    s.SetAuth0RsaPublicKey(testKey)
   }
 }
 
