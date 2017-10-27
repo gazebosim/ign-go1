@@ -44,19 +44,17 @@ func Init(dbUserName, dbPassword, dbAddress, dbName string, routes Routes, auth0
   }
   gServer = server
 
+  if !flag.Parsed() {
+    flag.Parse()
+  }
+
   v := flag.Lookup("test.v")
   isGoTest =  v != nil && v.Value.String() == "true"
 
   // Parse verbose setting, and adjust logging accordingly
-  if isGoTest {
-    if !flag.Parsed() {
-      flag.Parse()
-    }
-
-    if flag.Lookup("test.v").Value.String() == "false" {
-      log.SetFlags(0)
-      log.SetOutput(ioutil.Discard)
-    }
+  if isGoTest && v.Value.String() == "false" {
+    log.SetFlags(0)
+    log.SetOutput(ioutil.Discard)
   }
 
   // Initialize the database
