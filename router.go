@@ -386,7 +386,6 @@ func addCORSheadersMiddleware(w http.ResponseWriter, r *http.Request,
 
 // addCORSheaders adds the required Access Control headers to the HTTP response
 func addCORSheaders(w http.ResponseWriter) {
-  w.Header().Set("Access-Control-Allow-Origin", "*")
 
   w.Header().Set("Access-Control-Allow-Methods",
                  "GET, HEAD, POST, PUT, PATCH, DELETE")
@@ -397,6 +396,7 @@ func addCORSheaders(w http.ResponseWriter) {
                  `Accept, Accept-Language, Content-Language, Origin,
                   Content-Type, Content-Length, Accept-Encoding, X-CSRF-Token,
                   Authorization`)
+  w.Header().Set("Access-Control-Allow-Origin", "*")
 
   w.Header().Set("Access-Control-Expose-Headers","Link, X-Total-Count")
 }

@@ -44,7 +44,8 @@ func Init(dbUserName, dbPassword, dbAddress, dbName string, routes Routes, auth0
   }
   gServer = server
 
-  isGoTest = flag.Lookup("test.v") != nil
+  v := flag.Lookup("test.v")
+  isGoTest =  v != nil && v.Value.String() == "true"
 
   // Parse verbose setting, and adjust logging accordingly
   if isGoTest {
