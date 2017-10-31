@@ -11,8 +11,6 @@ import (
   "time"
   "github.com/gorilla/mux"
   "github.com/jinzhu/gorm"
-  // "github.com/auth0/go-jwt-middleware"
-  // "github.com/dgrijalva/jwt-go"
   _ "github.com/go-sql-driver/mysql"
 )
 
@@ -24,6 +22,15 @@ type Server struct {
 
   // Port used for non-secure requests
   HttpPort string
+
+  // SSLport used for secure requests
+  SSLport string
+
+  // SSLCert is the path to the SSL certificate.
+  SSLCert string
+
+  // SSLKey is the path to the SSL private key.
+  SSLKey string
 
   /// Auth0 public key used for token validation
   auth0RsaPublickey string
@@ -41,7 +48,9 @@ func Init(dbUserName, dbPassword, dbAddress, dbName string, routes Routes, auth0
 
   server = &Server{
     HttpPort: ":8000",
+    SSLport: ":4430",
   }
+  server.readPropertiesFromEnvVars()
   gServer = server
 
   isGoTest = flag.Lookup("test.v") != nil
@@ -81,6 +90,22 @@ func Init(dbUserName, dbPassword, dbAddress, dbName string, routes Routes, auth0
   return
 }
 
+// readPropertiesFromEnvVars configures the server based on env vars.
+func (s *Server) readPropertiesFromEnvVars() error {
+  var err error
+  // Get the SSL certificate, if specified.
+  if s.SSLCert, err = ReadEnvVar("IGN_SSL_CERT"); err != nil {
+    log.Printf("Missing IGN_SSL_CER env variable. " +
+               "Server will not be secure (no https).")
+  }
+  // Get the SSL private key, if specified.
+  if s.SSLKey, err = ReadEnvVar("IGN_SSL_KEY"); err != nil {
+    log.Printf("Missing IGN_SSL_KEY env variable. " +
+               "Server will not be secure (no https).")
+  }
+  return nil
+}
+
 func (s *Server) Auth0RsaPublicKey() string {
   return s.auth0RsaPublickey
 }
@@ -95,9 +120,13 @@ func (s *Server) SetAuth0RsaPublicKey(key string) {
 // Run the router and server
 func (s *Server) Run() {
 
-  // Start the http webserver
-  // Add some HTTP headers for handling preflight CORS requests.
-  log.Fatal(http.ListenAndServe(s.HttpPort, s.Router))
+  if (s.SSLCert != "" && s.SSLKey != "") {
+    // Start the webserver with TLS support.
+    log.Fatal(http.ListenAndServeTLS(s.SSLport, s.SSLCert, s.SSLKey, s.Router))
+  } else {
+    // Start the http webserver
+    log.Fatal(http.ListenAndServe(s.HttpPort, s.Router))
+  }
 }
 
 /////////////////////////////////////////////////
