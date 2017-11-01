@@ -12,6 +12,9 @@ const (
   defaultPageSize = 20
   maxPageSize = 100
   defaultPageNumber = 1
+
+  pageArgName = "page"
+  perPageArgName = "per_page"
 )
 //////////////////////////////////////
 
@@ -33,6 +36,8 @@ const (
 // PaginationRequest represents the pagination values requested
 // in the URL query (eg. ?page=2&per_page=10)
 type PaginationRequest struct {
+  // Flag that indicates if the request included a "page" argument.
+  PageRequested bool
   // The requested page number (value >= 1)
   Page int64
   // The requested number of items per page.
@@ -42,8 +47,9 @@ type PaginationRequest struct {
 }
 
 // NewPaginationRequest creates a new PaginationRequest from the given http request.
-func NewPaginationRequest(r *http.Request) PaginationRequest {
+func NewPaginationRequest(r *http.Request) (*PaginationRequest, *ErrMsg) {
   pageRequest := PaginationRequest{
+    PageRequested: false,
     Page: defaultPageNumber,
     PerPage: defaultPageSize,
     URL: r.URL.String(),
@@ -51,31 +57,53 @@ func NewPaginationRequest(r *http.Request) PaginationRequest {
   var err error
 
   // Parse request arguments
-  pageStr := r.URL.Query().Get("page")
+
+  // Process "page" argument
+  pageStr := r.URL.Query().Get(pageArgName)
   if pageStr != "" {
+    pageRequest.PageRequested = true
     pageRequest.Page, err = strconv.ParseInt(pageStr, 10, 64)
-    if err != nil || pageRequest.Page <= 0 {
-      pageRequest.Page = defaultPageNumber
+    if err != nil {
+      return nil, NewErrorMessageWithArgs(ErrorInvalidPaginationRequest, err, []string{pageArgName})
+    }
+    if pageRequest.Page <= 0 {
+      return nil, NewErrorMessageWithArgs(ErrorInvalidPaginationRequest, nil, []string{pageArgName})
     }
   }
-  perPageStr := r.URL.Query().Get("per_page")
+
+  // Process "per_page" argument
+  perPageStr := r.URL.Query().Get(perPageArgName)
   if perPageStr != "" {
     pageRequest.PerPage, err = strconv.ParseInt(perPageStr, 10, 64)
-    if err != nil || pageRequest.PerPage <= 0 || pageRequest.PerPage > maxPageSize {
+    if err != nil {
+      return nil, NewErrorMessageWithArgs(ErrorInvalidPaginationRequest, err, []string{perPageArgName})
+    }
+    if pageRequest.PerPage <= 0 {
+      return nil, NewErrorMessageWithArgs(ErrorInvalidPaginationRequest, err, []string{perPageArgName})
+    }
+    if pageRequest.PerPage > maxPageSize {
       pageRequest.PerPage = defaultPageSize
     }
   }
-  return pageRequest
+  return &pageRequest, nil
 }
 
 //////////////////////////////////////
 
 // PaginationResult represents the actual pagination output.
 type PaginationResult struct {
+  // Page number
   Page int64
+  // Page size
   PerPage int64
+  // Original request' url
   URL string
+  // Query "total" count (ie. this is NOT the "page" count)
   QueryCount int64
+  // A page is considered "found" if it is within the range of valid pages,
+  // OR if it is the first page and the DB query is empty. In this empty scenario,
+  // we want to return status OK with zero elements, rather than a 404 status.
+  PageFound bool
 }
 
 func newPaginationResult() PaginationResult {
@@ -83,6 +111,15 @@ func newPaginationResult() PaginationResult {
 }
 
 //////////////////////////////////////
+
+func computeLastPage(page *PaginationResult) int64 {
+  mod := page.QueryCount % page.PerPage
+  lastPage := page.QueryCount / page.PerPage
+  if mod > 0 {
+    lastPage++
+  }
+  return lastPage
+}
 
 // PaginateQuery applies a pagination request to a GORM query and executes it.
 // Param[in] q [gorm.DB] The query to be paginated
@@ -93,6 +130,9 @@ func PaginateQuery(q *gorm.DB, result interface{}, p PaginationRequest) (*Pagina
   q = q.Limit(int(p.PerPage))
   q = q.Offset((Max(p.Page, 1) - 1) * p.PerPage)
   q = q.Find(result)
+  if err := q.Error; err != nil {
+    return nil, err
+  }
   q = q.Limit(-1)
   q = q.Offset(-1)
   count := 0
@@ -105,6 +145,13 @@ func PaginateQuery(q *gorm.DB, result interface{}, p PaginationRequest) (*Pagina
   r.PerPage = p.PerPage
   r.URL = p.URL
   r.QueryCount = int64(count)
+
+  lastPage := computeLastPage(&r)
+  // A page is considered "found" if it is within the range of valid pages,
+  // OR if it is the first page and the DB query is empty. In this empty scenario,
+  // we want to return status OK with zero elements, rather than a 404 status.
+  r.PageFound = r.Page <= lastPage || (r.Page == 1 && r.QueryCount == 0)
+
   return &r, nil
 }
 
@@ -113,7 +160,7 @@ func PaginateQuery(q *gorm.DB, result interface{}, p PaginationRequest) (*Pagina
 // newLinkStr is a helper function to create a page link header string.
 func newLinkStr(u *url.URL, page int64, name string) string {
   params := u.Query()
-  params.Set("page", fmt.Sprint(page))
+  params.Set(pageArgName, fmt.Sprint(page))
   u.RawQuery = params.Encode()
   return fmt.Sprintf("<%s>; rel=\"%s\"", u, name)
 }
@@ -123,14 +170,9 @@ func newLinkStr(u *url.URL, page int64, name string) string {
 func WritePaginationHeaders(page PaginationResult, w http.ResponseWriter, r *http.Request) error {
   u , _ := url.Parse(page.URL)
   params := u.Query()
-  params.Set("per_page", fmt.Sprint(page.PerPage))
+  params.Set(perPageArgName, fmt.Sprint(page.PerPage))
 
-  // Compute last page number
-  mod := page.QueryCount % page.PerPage
-  lastPage := page.QueryCount / page.PerPage
-  if mod > 0 {
-    lastPage++
-  }
+  lastPage := computeLastPage(&page)
 
   var links []string
 
