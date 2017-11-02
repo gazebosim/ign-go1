@@ -111,7 +111,7 @@ func (s *Server) readPropertiesFromEnvVars() error {
 
   // Get the SSL certificate, if specified.
   if s.SSLCert, err = ReadEnvVar("IGN_SSL_CERT"); err != nil {
-    log.Printf("Missing IGN_SSL_CER env variable. " +
+    log.Printf("Missing IGN_SSL_CERT env variable. " +
                "Server will not be secure (no https).")
   }
   // Get the SSL private key, if specified.
