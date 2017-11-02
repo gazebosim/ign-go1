@@ -32,8 +32,22 @@ type Server struct {
   // SSLKey is the path to the SSL private key.
   SSLKey string
 
+  // DbConfig contains information about the database
+  DbConfig DatabaseConfig
+
   /// Auth0 public key used for token validation
   auth0RsaPublickey string
+}
+
+type DatabaseConfig struct {
+  // Username to login to a database.
+  UserName string
+  // Password to login to a database.
+  Password string
+  // Address of the database.
+  Address string
+  // Name of the database.
+  Name string
 }
 
 // gServer is an internal pointer to the Server.
@@ -42,7 +56,7 @@ var gServer *Server
 /////////////////////////////////////////////////
 /// Initialize this package
 ///
-func Init(dbUserName, dbPassword, dbAddress, dbName string, routes Routes, auth0RSAPublicKey string) (server *Server, err error) {
+func Init(routes Routes, auth0RSAPublicKey string) (server *Server, err error) {
 
   var isGoTest bool
 
@@ -72,7 +86,8 @@ func Init(dbUserName, dbPassword, dbAddress, dbName string, routes Routes, auth0
   }
 
   // Initialize the database
-  server.Db, err = dbInit(dbUserName, dbPassword, dbAddress, dbName)
+  // server.Db, err = dbInit(dbUserName, dbPassword, dbAddress, dbName)
+  err = server.dbInit()
 
   if err != nil {
     log.Println(err)
@@ -93,6 +108,7 @@ func Init(dbUserName, dbPassword, dbAddress, dbName string, routes Routes, auth0
 // readPropertiesFromEnvVars configures the server based on env vars.
 func (s *Server) readPropertiesFromEnvVars() error {
   var err error
+
   // Get the SSL certificate, if specified.
   if s.SSLCert, err = ReadEnvVar("IGN_SSL_CERT"); err != nil {
     log.Printf("Missing IGN_SSL_CER env variable. " +
@@ -103,6 +119,31 @@ func (s *Server) readPropertiesFromEnvVars() error {
     log.Printf("Missing IGN_SSL_KEY env variable. " +
                "Server will not be secure (no https).")
   }
+
+  // Get the database username
+  if s.DbConfig.UserName, err = ReadEnvVar("IGN_DB_USERNAME"); err != nil {
+    log.Printf("Missing IGN_DB_USERNAME env variable. " +
+      "Database connection will not work")
+  }
+
+  // Get the database password
+  if s.DbConfig.Password, err = ReadEnvVar("IGN_DB_PASSWORD"); err != nil {
+    log.Printf("Missing IGN_DB_PASSWORD env variable." +
+               "Database connection will not work")
+  }
+
+  // Get the database address
+  if s.DbConfig.Address, err = ReadEnvVar("IGN_DB_ADDRESS"); err != nil {
+    log.Printf("Missing IGN_DB_ADDRESS env variable." +
+               "Database connection will not work")
+  }
+
+  // Get the database name
+  if s.DbConfig.Name, err = ReadEnvVar("IGN_DB_NAME"); err != nil {
+    log.Printf("Missing IGN_DB_NAME env variable." +
+               "Database connection will not work")
+  }
+
   return nil
 }
 
@@ -143,14 +184,14 @@ func (s *Server) initTests() {
 }
 
 // DBInit Initialize the database connection
-func dbInit(username, password, address, database string) (*gorm.DB, error) {
+func (s *Server) dbInit() (error) {
 
   // Connect to the database
   url := fmt.Sprintf("%s:%s@tcp(%s)/%s?charset=utf8&parseTime=True&loc=UTC",
-    username, password, address, database)
+    s.DbConfig.UserName, s.DbConfig.Password, s.DbConfig.Address,
+    s.DbConfig.Name)
 
   var err error
-  var db *gorm.DB
 
   // Try to connect to the database. This is in for loop due to timing
   // issues. In particular, bitbucket pipelines uses a parallel database
@@ -158,7 +199,7 @@ func dbInit(username, password, address, database string) (*gorm.DB, error) {
   //
   // I have also seen this needed on amazon ec2 machines.
   for i := 0; i < 10; i++ {
-    db, err = gorm.Open("mysql", url)
+    s.Db, err = gorm.Open("mysql", url)
 
     // Check for errors
     if err != nil {
@@ -172,17 +213,16 @@ func dbInit(username, password, address, database string) (*gorm.DB, error) {
   }
 
   if err != nil {
-    return nil, errors.New("Unable to connect to the database")
-
-  log.Printf("Connected to the database.\n")
+    return errors.New("Unable to connect to the database")
   }
+  log.Printf("Connected to the database.\n")
 
   // Enable logging
   if flag.Lookup("test.v") != nil {
-    db.LogMode(flag.Lookup("test.v").Value.String() != "false")
+    s.Db.LogMode(flag.Lookup("test.v").Value.String() != "false")
   } else {
-    db.LogMode(true)
+    s.Db.LogMode(true)
   }
 
-  return db, nil
+  return nil
 }
