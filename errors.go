@@ -91,6 +91,11 @@ const ErrorFormDuplicateFile  = 3014
 // ErrorFormDuplicateModelName is triggered when the POSTed model carries duplicate
 // model name.
 const ErrorFormDuplicateModelName  = 3015
+// ErrorInvalidPaginationRequest is triggered when the requested pagination is invalid.
+// eg. invalid page or per_page argument values.
+const ErrorInvalidPaginationRequest = 3016
+// ErrorPaginationPageNotFound is triggered when the requested page is empty / not found.
+const ErrorPaginationPageNotFound = 3017
 
 ////////////////////////////
 // Authorization error codes
@@ -274,6 +279,14 @@ func ErrorMessage(err int64) (ErrMsg) {
       em.Msg = "Duplicate model name"
       em.ErrCode = ErrorFormDuplicateModelName
       em.StatusCode = http.StatusBadRequest
+    case ErrorInvalidPaginationRequest:
+      em.Msg = "Invalid pagination request"
+      em.ErrCode = ErrorInvalidPaginationRequest
+      em.StatusCode = http.StatusBadRequest
+    case ErrorPaginationPageNotFound:
+      em.Msg = "Page not found"
+      em.ErrCode = ErrorPaginationPageNotFound
+      em.StatusCode = http.StatusNotFound
     case ErrorFormInvalidValue:
       em.Msg = "Invalid value in field."
       em.ErrCode = ErrorFormInvalidValue
