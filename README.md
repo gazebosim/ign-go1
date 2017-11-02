@@ -69,15 +69,11 @@
     ```
 
     ```
-    export IGN_FUEL_SSL_CERT=~/go_ws/src/bitbucket.org/ignitionrobotics/ign-fuelserver/ssl/cert.pem
+    export IGN_SSL_CERT=~/go_ws/src/bitbucket.org/ignitionrobotics/ign-fuelserver/ssl/cert.pem
     ```
 
     ```
-    export IGN_FUEL_SSL_KEY=~/go_ws/src/bitbucket.org/ignitionrobotics/ign-fuelserver/ssl/key.pem
-    ```
-
-    ```
-    export IGN_FUEL_ENABLE_SSL
+    export IGN_SSL_KEY=~/go_ws/src/bitbucket.org/ignitionrobotics/ign-fuelserver/ssl/key.pem
     ```
 
     Note: to allow self certificates for localhost in Chrome, you need to put this in the chrome address bar : `chrome://flags/#allow-insecure-localhost`
