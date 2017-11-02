@@ -68,7 +68,14 @@ func Init(routes Routes, auth0RSAPublicKey string) (server *Server, err error) {
   server.readPropertiesFromEnvVars()
   gServer = server
 
+  log.Printf("Parsed[%d]\n", flag.Parsed())
+
+  /*if !flag.Parsed() {
+    flag.Parse()
+  }*/
+
   server.IsTest = flag.Lookup("test.v") != nil
+  log.Printf("IsTest[%d]\n", server.IsTest)
 
   if server.IsTest {
     // Parse verbose setting, and adjust logging accordingly
@@ -86,13 +93,13 @@ func Init(routes Routes, auth0RSAPublicKey string) (server *Server, err error) {
     }
   }
 
-  /*
-  if !flag.Parsed() {
+  /*if !flag.Parsed() {
     flag.Parse()
   }
 
   v := flag.Lookup("test.v")
   server.IsTest =  v != nil && v.Value.String() == "true"
+  log.Printf("IsTest[%d]\n", server.IsTest)
 
   // Parse verbose setting, and adjust logging accordingly
   if server.IsTest && v.Value.String() == "false" {
@@ -101,7 +108,6 @@ func Init(routes Routes, auth0RSAPublicKey string) (server *Server, err error) {
   }*/
 
   // Initialize the database
-  // server.Db, err = dbInit(dbUserName, dbPassword, dbAddress, dbName)
   err = server.dbInit()
 
   if err != nil {
