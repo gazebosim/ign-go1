@@ -35,6 +35,9 @@ type Server struct {
   // DbConfig contains information about the database
   DbConfig DatabaseConfig
 
+  // IsTest is true when tests are running.
+  IsTest bool
+
   /// Auth0 public key used for token validation
   auth0RsaPublickey string
 }
@@ -58,8 +61,6 @@ var gServer *Server
 ///
 func Init(routes Routes, auth0RSAPublicKey string) (server *Server, err error) {
 
-  var isGoTest bool
-
   server = &Server{
     HttpPort: ":8000",
     SSLport: ":4430",
@@ -67,22 +68,17 @@ func Init(routes Routes, auth0RSAPublicKey string) (server *Server, err error) {
   server.readPropertiesFromEnvVars()
   gServer = server
 
-  isGoTest = flag.Lookup("test.v") != nil
+  if !flag.Parsed() {
+    flag.Parse()
+  }
 
-  if isGoTest {
-    // Parse verbose setting, and adjust logging accordingly
-    if !flag.Parsed() {
-      flag.Parse()
-    }
+  v := flag.Lookup("test.v")
+  server.IsTest =  v != nil && v.Value.String() == "true"
 
-    v := flag.Lookup("test.v")
-    isTestVerbose := v.Value.String() == "true"
-
-    // Disable logging if needed
-    if !isTestVerbose {
-      log.SetFlags(0)
-      log.SetOutput(ioutil.Discard)
-    }
+  // Parse verbose setting, and adjust logging accordingly
+  if server.IsTest && v.Value.String() == "false" {
+    log.SetFlags(0)
+    log.SetOutput(ioutil.Discard)
   }
 
   // Initialize the database
@@ -93,7 +89,7 @@ func Init(routes Routes, auth0RSAPublicKey string) (server *Server, err error) {
     log.Println(err)
   }
 
-  if isGoTest {
+  if server.IsTest {
     server.initTests()
   } else {
     server.SetAuth0RsaPublicKey(auth0RSAPublicKey)
