@@ -11,6 +11,8 @@ import (
   "time"
   "github.com/gorilla/mux"
   "github.com/jinzhu/gorm"
+  // Needed by dbInit
+  _ "github.com/go-sql-driver/mysql"
 )
 
 // Server encapsulates information needed by a downstream application
@@ -183,7 +185,7 @@ func (s *Server) initTests() {
   }
 }
 
-// DBInit Initialize the database connection
+// dbInit Initialize the database connection
 func (s *Server) dbInit() (error) {
 
   // Connect to the database
@@ -213,6 +215,7 @@ func (s *Server) dbInit() (error) {
   }
 
   if err != nil {
+    s.Db = nil
     return errors.New("Unable to connect to the database")
   }
   log.Printf("Connected to the database.\n")

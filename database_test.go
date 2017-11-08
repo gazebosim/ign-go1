@@ -7,13 +7,15 @@ import (
 /////////////////////////////////////////////////
 // Test a bad connection to the database
 func TestBadDatabase(t *testing.T) {
-  db, err := DBInit("bad", "bad", "bad", "bad")
+  var server Server
+  server.Db = nil
+  err := server.dbInit()
 
   if err == nil {
     t.Fatal("Should have received an error from the database")
   }
 
-  if db != nil {
+  if server.Db != nil {
     t.Fatal("Database should be nil")
   }
 }
