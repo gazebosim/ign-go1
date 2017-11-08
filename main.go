@@ -13,6 +13,7 @@ import (
   "github.com/jinzhu/gorm"
 )
 
+// Server encapsulates information needed by a downstream application
 type Server struct {
   /// Global database interface
   Db *gorm.DB
@@ -41,6 +42,7 @@ type Server struct {
   auth0RsaPublickey string
 }
 
+// DatabaseConfig contains information about a database connection
 type DatabaseConfig struct {
   // Username to login to a database.
   UserName string
@@ -55,9 +57,7 @@ type DatabaseConfig struct {
 // gServer is an internal pointer to the Server.
 var gServer *Server
 
-/////////////////////////////////////////////////
-/// Initialize this package
-///
+/// Init initialize this package
 func Init(routes Routes, auth0RSAPublicKey string) (server *Server, err error) {
 
   server = &Server{
@@ -146,11 +146,12 @@ func (s *Server) readPropertiesFromEnvVars() error {
   return nil
 }
 
+// Auth0RsaPublicKey return the Auth0 public key
 func (s *Server) Auth0RsaPublicKey() string {
   return s.auth0RsaPublickey
 }
 
-// Set the Server's Auth0 RSA public key
+// SetAuth0RsaPublicKey sets the server's Auth0 RSA public key
 func (s *Server) SetAuth0RsaPublicKey(key string) {
   s.auth0RsaPublickey = key
   pemKeyString = "-----BEGIN CERTIFICATE-----\n" + s.auth0RsaPublickey +
