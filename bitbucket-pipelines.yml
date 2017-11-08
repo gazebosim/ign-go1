@@ -14,46 +14,6 @@ pipelines:
           - go test
         services:
           - database
-  branches:
-    # Change to staging after released
-    default:
-      - step:
-          script:
-            - source bitbucket-pipelines-go.sh
-            - cd ${IMPORT_PATH}
-            - go get -u github.com/golang/lint/golint
-            - go version
-            - go get
-            - lint=$(golint ./... | grep -v ".pb.go") && if [[ ! -z $lint ]]; then echo $lint && exit 1; fi
-            - go build
-            - go test
-            - apt-get update
-            - apt-get install -y zip python3 python-pip
-            - pip install boto3==1.3.0
-            - zip -r /tmp/artifact.zip * .ebextensions
-            - export APPLICATION_ENVIRONMENT="ign-fuel-server-staging"
-            - python beanstalk_deploy.py
-          services:
-            - database
-    production:
-      - step:
-          script:
-            - source bitbucket-pipelines-go.sh
-            - cd ${IMPORT_PATH}
-            - go get -u github.com/golang/lint/golint
-            - go version
-            - go get
-            - lint=$(golint ./... | grep -v ".pb.go") && if [[ ! -z $lint ]]; then echo $lint && exit 1; fi
-            - go build
-            - go test
-            - apt-get update
-            - apt-get install -y zip python3 python-pip
-            - pip install boto3==1.3.0
-            - zip -r /tmp/artifact.zip * .ebextensions
-            - export APPLICATION_ENVIRONMENT="ign-fuel-server-production"
-            - python beanstalk_deploy.py
-          services:
-            - database
 
 definitions:
   services:
@@ -61,4 +21,4 @@ definitions:
       image: mysql
       environment:
         MYSQL_ROOT_PASSWORD: root
-        MYSQL_DATABASE: fuel
+        MYSQL_DATABASE: root
