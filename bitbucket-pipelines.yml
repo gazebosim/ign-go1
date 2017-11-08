@@ -6,8 +6,10 @@ pipelines:
         script:
           - source bitbucket-pipelines-go.sh
           - cd ${IMPORT_PATH}
+          - go get -u github.com/golang/lint/golint
           - go version
           - go get
+          - lint=$(golint ./... | grep -v ".pb.go") && if [[ ! -z $lint ]]; then echo $lint && exit 1; fi
           - go build
           - go test
         services:
@@ -19,8 +21,10 @@ pipelines:
           script:
             - source bitbucket-pipelines-go.sh
             - cd ${IMPORT_PATH}
+            - go get -u github.com/golang/lint/golint
             - go version
             - go get
+            - lint=$(golint ./... | grep -v ".pb.go") && if [[ ! -z $lint ]]; then echo $lint && exit 1; fi
             - go build
             - go test
             - apt-get update
@@ -36,8 +40,10 @@ pipelines:
           script:
             - source bitbucket-pipelines-go.sh
             - cd ${IMPORT_PATH}
+            - go get -u github.com/golang/lint/golint
             - go version
             - go get
+            - lint=$(golint ./... | grep -v ".pb.go") && if [[ ! -z $lint ]]; then echo $lint && exit 1; fi
             - go build
             - go test
             - apt-get update
