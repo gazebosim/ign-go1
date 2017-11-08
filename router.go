@@ -34,6 +34,7 @@ type Header struct {
 // See https://blog.golang.org/error-handling-and-go
 type Handler func(http.ResponseWriter, *http.Request) *ErrMsg
 
+// HandlerWithResult represents an HTTP Handler that that has a result
 type HandlerWithResult func(w http.ResponseWriter, r *http.Request) (interface{}, *ErrMsg)
 
 // FormatHandler represents a format type string, and handler function pair. Handlers are called in response to a route request.
@@ -125,7 +126,6 @@ var AuthHeadersOptional = []Header {
   },
 }
 
-/////////////////////////////////////////////////
 // NewRouter creates a new Gorilla/mux router
 func NewRouter(routes Routes) *mux.Router {
 
@@ -158,13 +158,11 @@ func NewRouter(routes Routes) *mux.Router {
   return router
 }
 
-/////////////////////////////////////////////////
 // JSONResult provides JSON serialization for handler results
 func JSONResult(handler HandlerWithResult) TypeJSONResult {
   return TypeJSONResult{"", handler}
 }
 
-/////////////////////////////////////////////////
 // JSONListResult provides JSON serialization for handler results that are
 // slices of objects.
 func JSONListResult(wrapper string, handler HandlerWithResult) TypeJSONResult {

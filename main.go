@@ -21,7 +21,7 @@ type Server struct {
   Router *mux.Router
 
   // Port used for non-secure requests
-  HttpPort string
+  HTTPPort string
 
   // SSLport used for secure requests
   SSLport string
@@ -57,11 +57,11 @@ type DatabaseConfig struct {
 // gServer is an internal pointer to the Server.
 var gServer *Server
 
-/// Init initialize this package
+// Init initialize this package
 func Init(routes Routes, auth0RSAPublicKey string) (server *Server, err error) {
 
   server = &Server{
-    HttpPort: ":8000",
+    HTTPPort: ":8000",
     SSLport: ":4430",
   }
   server.readPropertiesFromEnvVars()
@@ -166,7 +166,7 @@ func (s *Server) Run() {
     log.Fatal(http.ListenAndServeTLS(s.SSLport, s.SSLCert, s.SSLKey, s.Router))
   } else {
     // Start the http webserver
-    log.Fatal(http.ListenAndServe(s.HttpPort, s.Router))
+    log.Fatal(http.ListenAndServe(s.HTTPPort, s.Router))
   }
 }
 
