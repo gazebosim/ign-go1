@@ -11,7 +11,6 @@ import (
   "time"
   "github.com/gorilla/mux"
   "github.com/jinzhu/gorm"
-  _ "github.com/go-sql-driver/mysql"
 )
 
 type Server struct {
