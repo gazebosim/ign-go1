@@ -96,6 +96,12 @@
     CREATE DATABASE fuel;
     ```
 
+    Also create a separate database to use with tests:
+
+    ```
+    CREATE DATABASE fuel_test;
+    ```
+
     ```
     CREATE USER 'newuser'@'localhost' IDENTIFIED BY 'password';
     ```
