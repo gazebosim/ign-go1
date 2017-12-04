@@ -17,7 +17,8 @@ import (
   "time"
 )
 
-// Returns the user identity found in the http request's JWT token.
+// GetUserIdentity returns the user identity found in the http request's JWT
+// token.
 func GetUserIdentity(r *http.Request) (identity string, ok bool) {
   // We use the claimed subject contained in the JWT as the ID.
   jwtUser := r.Context().Value("user")
@@ -33,7 +34,7 @@ func GetUserIdentity(r *http.Request) (identity string, ok bool) {
   return
 }
 
-// Read an environment variable and return an error if not present
+// ReadEnvVar reads an environment variable and return an error if not present
 func ReadEnvVar(name string) (string, error) {
   value := os.Getenv(name)
   if value == "" {
@@ -51,7 +52,7 @@ func Unzip(buff bytes.Buffer, size int64, dest string, verbose bool) error {
   return UnzipImpl(reader, dest, verbose)
 }
 
-// unzip extracts a compressed .zip file
+// UnzipFile extracts a compressed .zip file
 func UnzipFile(zipfile string, dest string, verbose bool) error {
   reader, err := zip.OpenReader(zipfile)
   if err != nil {
@@ -61,7 +62,7 @@ func UnzipFile(zipfile string, dest string, verbose bool) error {
   return UnzipImpl(&reader.Reader, dest, verbose)
 }
 
-// Helper unzip implementation
+// UnzipImpl is a helper unzip implementation
 func UnzipImpl(reader *zip.Reader, dest string, verbose bool) error {
   for _, f := range reader.File {
     zipped, err := f.Open()
@@ -144,7 +145,8 @@ func Max(x, y int64) int64 {
   return y
 }
 
-// Returns the slice of strings with all tags parsed from the input string.
+// StrToSlice returns the slice of strings with all tags parsed from the input
+// string.
 // All spaces will be removed (even spaces in the 'middle').
 // The input string contains tags separated with commas.
 // E.g. input string: " tag1, tag2,  tag3 "

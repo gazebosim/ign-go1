@@ -1,10 +1,10 @@
-# Ignition Fuel Server
+# Ignition GO
 
 # Install
 
 1. Dependencies
 
-    1. Go version 1.8 or above
+    1. Go version 1.8 or above. We are using 1.8.3 
 
         ```
         download and follow instructions from https://golang.org/dl/

@@ -11,9 +11,11 @@ import (
   "time"
   "github.com/gorilla/mux"
   "github.com/jinzhu/gorm"
+  // Needed by dbInit
   _ "github.com/go-sql-driver/mysql"
 )
 
+// Server encapsulates information needed by a downstream application
 type Server struct {
   /// Global database interface
   Db *gorm.DB
@@ -21,7 +23,7 @@ type Server struct {
   Router *mux.Router
 
   // Port used for non-secure requests
-  HttpPort string
+  HTTPPort string
 
   // SSLport used for secure requests
   SSLport string
@@ -42,6 +44,7 @@ type Server struct {
   auth0RsaPublickey string
 }
 
+// DatabaseConfig contains information about a database connection
 type DatabaseConfig struct {
   // Username to login to a database.
   UserName string
@@ -56,13 +59,11 @@ type DatabaseConfig struct {
 // gServer is an internal pointer to the Server.
 var gServer *Server
 
-/////////////////////////////////////////////////
-/// Initialize this package
-///
+// Init initialize this package
 func Init(routes Routes, auth0RSAPublicKey string) (server *Server, err error) {
 
   server = &Server{
-    HttpPort: ":8000",
+    HTTPPort: ":8000",
     SSLport: ":4430",
   }
   server.readPropertiesFromEnvVars()
@@ -150,11 +151,12 @@ func (s *Server) readPropertiesFromEnvVars() error {
   return nil
 }
 
+// Auth0RsaPublicKey return the Auth0 public key
 func (s *Server) Auth0RsaPublicKey() string {
   return s.auth0RsaPublickey
 }
 
-// Set the Server's Auth0 RSA public key
+// SetAuth0RsaPublicKey sets the server's Auth0 RSA public key
 func (s *Server) SetAuth0RsaPublicKey(key string) {
   s.auth0RsaPublickey = key
   pemKeyString = "-----BEGIN CERTIFICATE-----\n" + s.auth0RsaPublickey +
@@ -169,7 +171,7 @@ func (s *Server) Run() {
     log.Fatal(http.ListenAndServeTLS(s.SSLport, s.SSLCert, s.SSLKey, s.Router))
   } else {
     // Start the http webserver
-    log.Fatal(http.ListenAndServe(s.HttpPort, s.Router))
+    log.Fatal(http.ListenAndServe(s.HTTPPort, s.Router))
   }
 }
 
@@ -186,7 +188,7 @@ func (s *Server) initTests() {
   }
 }
 
-// DBInit Initialize the database connection
+// dbInit Initialize the database connection
 func (s *Server) dbInit() (error) {
 
   // Connect to the database
@@ -216,6 +218,7 @@ func (s *Server) dbInit() (error) {
   }
 
   if err != nil {
+    s.Db = nil
     return errors.New("Unable to connect to the database")
   }
   log.Printf("Connected to the database.\n")

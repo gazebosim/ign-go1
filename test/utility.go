@@ -32,7 +32,7 @@ type FileDesc struct {
   Contents string
 }
 
-// setup helper function
+// Setup helper function
 func Setup(_router *mux.Router) {
   router = _router
 }
@@ -138,7 +138,7 @@ func CreateTmpFolderWithContents(folderName string, files []FileDesc) (string, e
   return baseDir, nil
 }
 
-// assertRoute is a helper function that checks for a valid route
+// AssertRoute is a helper function that checks for a valid route
 // \param[in] method One of "GET", "PATCH", "PUT", "POST", "DELETE", "OPTIONS"
 // \param[in] route The URL string
 // \param[in] code The expected result HTTP code
@@ -149,6 +149,7 @@ func AssertRoute(method, route string, code int, t *testing.T) (*[]byte, bool) {
   return AssertRouteWithBody(method, route, nil, code, t)
 }
 
+// AssertRouteWithBody is a helper function that checks for a valid route
 // \return[out] *[]byte A pointer to a bytes slice containing the response body.
 // \return[out] bool A flag indicating if the operation was ok.
 func AssertRouteWithBody(method, route string, body *bytes.Buffer, code int, t *testing.T) (*[]byte, bool) {
@@ -157,7 +158,7 @@ func AssertRouteWithBody(method, route string, body *bytes.Buffer, code int, t *
                                  "application/json", t)
 }
 
-// Helper function that checks for a valid route.
+// AssertRouteMultipleArgs is a helper function that checks for a valid route.
 // \param[in] method One of "GET", "PATCH", "PUT", "POST", "DELETE"
 // \param[in] route The URL string
 // \param[in] body The body to send in the request, or nil
@@ -215,7 +216,8 @@ func AssertRouteMultipleArgs(method string, route string, body *bytes.Buffer, co
   return &b, ok
 }
 
-// This function tries to unmarshal a backend's ErrMsg and compares to given ErrCode
+// AssertBackendErrorCode is a function that tries to unmarshal a backend's
+// ErrMsg and compares to given ErrCode
 func AssertBackendErrorCode(testName string, bslice *[]byte, errCode int, t *testing.T) {
   var errMsg ign.ErrMsg
   if err := json.Unmarshal(*bslice, &errMsg); err != nil {
