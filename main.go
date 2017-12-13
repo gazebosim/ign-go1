@@ -72,6 +72,9 @@ func Init(routes Routes, auth0RSAPublicKey string) (server *Server, err error) {
   server.IsTest = flag.Lookup("test.v") != nil
 
   if server.IsTest {
+    // Let's use a separate DB name if under test mode.
+    server.DbConfig.Name = server.DbConfig.Name + "_test"
+
     // Parse verbose setting, and adjust logging accordingly
     if !flag.Parsed() {
       flag.Parse()
