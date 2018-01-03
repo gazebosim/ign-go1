@@ -160,11 +160,10 @@ func StrToSlice(tagsStr string) ([]string) {
   noSpaces = strings.TrimPrefix(noSpaces, ",")
   noSpaces = strings.TrimSuffix(noSpaces, ",")
   // regexp to remove duplicate spaces
-  re_inside_whtsp := regexp.MustCompile(`[\s\p{Zs}]{2,}`)
-
+  reInsideWhtsp := regexp.MustCompile(`[\s\p{Zs}]{2,}`)
   result := make([]string, 0)
   for _, t := range strings.Split(noSpaces, ",") {
-    result = append(result, re_inside_whtsp.ReplaceAllString(t, " "))
+    result = append(result, reInsideWhtsp.ReplaceAllString(t, " "))
   }
   return result
 }
