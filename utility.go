@@ -11,6 +11,7 @@ import (
   "math/rand"
   "os"
   "path/filepath"
+  "regexp"
   "runtime"
   "strconv"
   "strings"
@@ -147,18 +148,23 @@ func Max(x, y int64) int64 {
 
 // StrToSlice returns the slice of strings with all tags parsed from the input
 // string.
-// All spaces will be removed (even spaces in the 'middle').
+// It will trim leading and trailing whitespace, and reduce middle whitespaces to 1 space.
 // The input string contains tags separated with commas.
 // E.g. input string: " tag1, tag2,  tag3 "
 // E.g. output: ["tag1", "tag2", "tag3"]
-func StrToSlice(tags string) ([]string) {
-  if tags == "" {
+func StrToSlice(tagsStr string) ([]string) {
+  if tagsStr == "" {
     return nil
   }
-
-  noSpaces := strings.TrimSpace(tags)
-  noSpaces = strings.Replace(tags, " ", "", -1)
+  noSpaces := strings.TrimSpace(tagsStr)
   noSpaces = strings.TrimPrefix(noSpaces, ",")
   noSpaces = strings.TrimSuffix(noSpaces, ",")
-  return strings.Split(noSpaces, ",")
+  // regexp to remove duplicate spaces
+  re_inside_whtsp := regexp.MustCompile(`[\s\p{Zs}]{2,}`)
+
+  result := make([]string, 0)
+  for _, t := range strings.Split(noSpaces, ",") {
+    result = append(result, re_inside_whtsp.ReplaceAllString(t, " "))
+  }
+  return result
 }
