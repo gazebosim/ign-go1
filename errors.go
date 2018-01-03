@@ -200,7 +200,7 @@ func ErrorMessage(err int64) (ErrMsg) {
 
   em := ErrorMessageOK()
 
-  em.ErrID = uuid.NewV4().String()
+  em.ErrID = uuid.Must(uuid.NewV4()).String()
 
   switch (err) {
     case ErrorNoDatabase:
