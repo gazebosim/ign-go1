@@ -163,6 +163,7 @@ func StrToSlice(tagsStr string) ([]string) {
   reInsideWhtsp := regexp.MustCompile(`[\s\p{Zs}]{2,}`)
   result := make([]string, 0)
   for _, t := range strings.Split(noSpaces, ",") {
+    t = strings.TrimSpace(t)
     result = append(result, reInsideWhtsp.ReplaceAllString(t, " "))
   }
   return result
