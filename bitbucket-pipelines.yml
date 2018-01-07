@@ -11,10 +11,10 @@ pipelines:
           - go get
           - lint=$(golint ./... | grep -v ".pb.go") && if [[ ! -z $lint ]]; then echo $lint && exit 1; fi
           - go build
-          - go test -covermode=count -coverprofile=count.out
-          - go test bitbucket.org/ignitionrobotics/ign-go/test -covermode=count -coverprofile=count-test.out
-          - go tool cover -html=count.out -o coverage.html && go tool cover -func=count.out
-          - go tool cover -html=count-test.out -o coverage-test.html && go tool cover -func=count-test.out
+          - go test -covermode=count -coverprofile=test-reports/count.out
+          - go test bitbucket.org/ignitionrobotics/ign-go/test -covermode=count -coverprofile=test-reports/count-test.out
+          - go tool cover -html=test-reports/count.out -o test-reports/coverage.html && go tool cover -func=test-reports/count.out
+          - go tool cover -html=test-reports/count-test.out -o test-reports/coverage-test.html && go tool cover -func=test-reports/count-test.out
         services:
           - database
 
