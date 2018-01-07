@@ -12,9 +12,9 @@ pipelines:
           - lint=$(golint ./... | grep -v ".pb.go") && if [[ ! -z $lint ]]; then echo $lint && exit 1; fi
           - go build
           - go test -covermode=count -coverprofile=test-reports/count.out
+          - go tool cover -func=test-reports/count.out
           - go test bitbucket.org/ignitionrobotics/ign-go/test -covermode=count -coverprofile=test-reports/count-test.out
-          - go tool cover -html=test-reports/count.out -o test-reports/coverage.html && go tool cover -func=test-reports/count.out
-          - go tool cover -html=test-reports/count-test.out -o test-reports/coverage-test.html.xml && go tool cover -func=test-reports/count-test.out
+          - go tool cover -func=test-reports/count-test.out
         services:
           - database
 
