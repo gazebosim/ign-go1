@@ -149,8 +149,9 @@ func Max(x, y int64) int64 {
 // StrToSlice returns the slice of strings with all tags parsed from the input
 // string.
 // It will trim leading and trailing whitespace, and reduce middle whitespaces to 1 space.
+// It will also remove 'empty' tags (ie. whitespaces enclosed with commas, ',   ,')
 // The input string contains tags separated with commas.
-// E.g. input string: " tag1, tag2,  tag3 "
+// E.g. input string: " tag1, tag2,  tag3 ,   , "
 // E.g. output: ["tag1", "tag2", "tag3"]
 func StrToSlice(tagsStr string) ([]string) {
   if tagsStr == "" {
@@ -163,7 +164,10 @@ func StrToSlice(tagsStr string) ([]string) {
   reInsideWhtsp := regexp.MustCompile(`[\s\p{Zs}]{2,}`)
   result := make([]string, 0)
   for _, t := range strings.Split(noSpaces, ",") {
-    result = append(result, reInsideWhtsp.ReplaceAllString(t, " "))
+    t = strings.TrimSpace(t)
+    if len(t) > 0 {
+      result = append(result, reInsideWhtsp.ReplaceAllString(t, " "))
+    }
   }
   return result
 }
