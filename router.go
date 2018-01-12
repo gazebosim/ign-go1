@@ -156,6 +156,8 @@ func NewRouter(routes Routes) *mux.Router {
     }
   }
   // NOTE: sortedREs and corsMap are private vars defined below
+  // Sorting corsMap is needed to correctly resolve OPTION requests
+  // that need to match a regex.
   sortedREs = getSortedREs(corsMap)
 
   return router
@@ -230,6 +232,8 @@ func (fn ProtoResult) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 /////////////////////////////////////////////////
 
 var corsMap = map[string]int{}
+// sortedREs keeps a sorted list of registered routes in corsMap.
+// It allows us to iterate the corsMap in 'order'.
 var sortedREs []string
 
 var pemKeyString string
@@ -264,8 +268,8 @@ var jwtRequiredMiddleware = jwtmiddleware.New(jwtmiddleware.Options{
 
 /////////////////////////////////////////////////
 // sortRE is an internal []string wrapper type used to sort by
-// the number of "[^/]+" found in a regex (ie. count).
-// If same count is found then larger string will take precedence.
+// the number of "[^/]+" string occurrences found in a regex (ie. count).
+// If the same count is found then the larger string will take precedence.
 type sortRE []string
 func (s sortRE) Len() int {
   return len(s)
