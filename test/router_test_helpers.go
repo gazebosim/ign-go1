@@ -27,7 +27,7 @@ func InvalidRouteTestHelper(t *testing.T) {
 func OptionsTestHelper(routes ign.Routes, t *testing.T) {
 
   for idx := range routes {
-    uri := routes[idx].URI
+    uri := routes[idx].Route().URI
     // Create a valid url. We look for routes containing {path:[a-zA-Z0-9=\\-\\_\\/\\.\\+]+},
     // and only keep the first part (ie. path)
     re := regexp.MustCompile("{([^/]+)?:.+?}")
@@ -41,8 +41,8 @@ func OptionsTestHelper(routes ign.Routes, t *testing.T) {
     if !ok {
       t.Fatalf("OPTIONS %s request failed", uri)
     }
-    if parsed["name"] != routes[idx].Name {
-      t.Fatalf("OPTIONS %s request returned invalid name. Exp: [%s], got: [%s]", uri, routes[idx].Name, parsed["name"])
+    if parsed["name"] != routes[idx].Route().Name {
+      t.Fatalf("OPTIONS %s request returned invalid name. Exp: [%s], got: [%s]", uri, routes[idx].Route().Name, parsed["name"])
     }
   }
 }

@@ -38,6 +38,7 @@ func GetUserIdentity(r *http.Request) (identity string, ok bool) {
 // ReadEnvVar reads an environment variable and return an error if not present
 func ReadEnvVar(name string) (string, error) {
   value := os.Getenv(name)
+  value = strings.TrimSpace(value)
   if value == "" {
     return "", errors.New("Missing " + name + " env variable.")
   }
@@ -170,4 +171,14 @@ func StrToSlice(tagsStr string) ([]string) {
     }
   }
   return result
+}
+
+// Contains is a helper function to check if a string exists in a slice
+func Contains(vals []string, s string) bool {
+  for _, v := range vals {
+    if v == s {
+      return true
+    }
+  }
+  return false
 }

@@ -10,11 +10,13 @@ import (
   "sort"
   "strings"
   "time"
-  "github.com/dgrijalva/jwt-go"
-  "github.com/codegangsta/negroni"
   "github.com/auth0/go-jwt-middleware"
+  "github.com/codegangsta/negroni"
+  "github.com/dgrijalva/jwt-go"
   "github.com/golang/protobuf/proto"
+  "github.com/gorilla/csrf"
   "github.com/gorilla/mux"
+  "github.com/unrolled/secure"
 )
 
 
@@ -79,6 +81,11 @@ type Methods []Method
 // SecureMethods is a slice of Method that require authentication.
 type SecureMethods []Method
 
+type IRoute interface {
+  IgnoreCSRF() bool
+  Route() Route
+}
+
 // Route is a definition of a route
 type Route struct {
 
@@ -99,10 +106,29 @@ type Route struct {
 
   // Secure HTTP methods supported by the route
   SecureMethods SecureMethods `json:"secure_methods"`
+
+  // CSRFIgnore to let this route bypass CSRF checks
+  // CSRFIgnore bool `json:"csrf_ignore"`
+}
+func (r Route) IgnoreCSRF() bool {
+  return false
+}
+func (r Route) Route() Route {
+  return r
+}
+
+type NoCSRFRoute struct {
+  R Route
+}
+func (r NoCSRFRoute) IgnoreCSRF() bool {
+  return true
+}
+func (r NoCSRFRoute) Route() Route {
+  return r.R
 }
 
 // Routes is an array of Route
-type Routes []Route
+type Routes []IRoute
 
 
 // AuthHeadersRequired is an array of Headers needed when authentication is
@@ -140,7 +166,7 @@ func NewRouter(routes Routes) *mux.Router {
     var allowedOptions []string
 
     // Process unsecure routes
-    for _, method := range route.Methods {
+    for _, method := range route.Route().Methods {
       for _, formatHandler := range method.Handlers {
         createRouteHelper(router, &routes, routeIndex, method.Type, false,
                           &allowedOptions, formatHandler)
@@ -148,7 +174,7 @@ func NewRouter(routes Routes) *mux.Router {
     }
 
     // Process secure routes
-    for _, method := range route.SecureMethods {
+    for _, method := range route.Route().SecureMethods {
       for _, formatHandler := range method.Handlers {
         createRouteHelper(router, &routes, routeIndex, method.Type, true,
                           &allowedOptions, formatHandler)
@@ -298,7 +324,7 @@ func getSortedREs(m map[string]int) []string {
 /////////////////////////////////////////////////
 // Helper function that creates a route
 func createRouteHelper(router *mux.Router, routes *Routes,
-                       routeIndex int, methodType string, secure bool,
+                       routeIndex int, methodType string, isSecure bool,
                        allowedOptions *[]string, formatHandler FormatHandler) {
 
   *allowedOptions = append(*allowedOptions, methodType)
@@ -306,31 +332,65 @@ func createRouteHelper(router *mux.Router, routes *Routes,
 
   // Configure auth middleware
   var authMiddleware negroni.HandlerFunc
-  if !secure {
+  if !isSecure {
     authMiddleware = negroni.HandlerFunc(jwtOptionalMiddleware.HandlerWithNext)
   } else {
     authMiddleware = negroni.HandlerFunc(jwtRequiredMiddleware.HandlerWithNext)
   }
 
+  secureMiddleware := secure.New(secure.Options{
+    // see https://github.com/unrolled/secure
+
+    // If SSLRedirect is set to true, then only allow HTTPS requests. Default is false.
+    SSLRedirect: true,
+    // If FrameDeny is set to true, adds the X-Frame-Options header with the value of `DENY`. Default is false.
+    FrameDeny: true,
+    // If ContentTypeNosniff is true, adds the X-Content-Type-Options header with the value `nosniff`. Default is false.
+    ContentTypeNosniff: true,
+    // If BrowserXssFilter is true, adds the X-XSS-Protection header with the value `1; mode=block`. Default is false.
+    BrowserXssFilter: true,
+    // Also See https://developer.mozilla.org/en-US/docs/Web/HTTP/CSP
+    ContentSecurityPolicy: "default-src 'self'",
+    // PublicKey implements HPKP to prevent MITM attacks with forged certificates. Default is "".
+    // Also see: https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Public-Key-Pins
+    // PublicKey: `pin-sha256="base64+primary=="; pin-sha256="base64+backup=="; max-age=5184000; includeSubdomains; report-uri="https://www.example.com/hpkp-report"`,
+
+    // This will cause the AllowedHosts, SSLRedirect, and STSSeconds/STSIncludeSubdomains options to be ignored during development. When deploying to production, be sure to set this to false.
+    IsDevelopment: gServer.IsDevelopment,
+  })
+
   // Configure middlewares chain
   handler = negroni.New(
     negroni.HandlerFunc(panicRecoveryMiddleware),
+    negroni.HandlerFunc(secureMiddleware.HandlerFuncWithNext),
+    negroni.HandlerFunc(setCSRFTokenMiddleware),
     negroni.HandlerFunc(requireDBMiddleware),
     authMiddleware,
     negroni.HandlerFunc(addCORSheadersMiddleware),
     negroni.Wrap(http.Handler(handler)),
   )
 
+  // CSRF Protection
+  if gServer.CSRFKey != "" {
+    if (*routes)[routeIndex].IgnoreCSRF() {
+      fmt.Println("CSRF ignore for route", (*routes)[routeIndex].Route().URI)
+    } else {
+      // See https://github.com/gorilla/csrf
+      // And: https://zarkopafilis.github.io/go-adventures/posts/gorilla-csrf-explained.html
+      handler = csrf.Protect([]byte(gServer.CSRFKey))(handler)
+    }
+  }
+  route := (*routes)[routeIndex].Route()
   // Last, wrap everything with a Logger middleware
-  handler = logger(handler, (*routes)[routeIndex].Name)
+  handler = logger(handler, route.Name)
 
-  uriPath := (*routes)[routeIndex].URI + formatHandler.Extension
+  uriPath := route.URI + formatHandler.Extension
 
   // Create the route handler.
   router.
   Methods(methodType).
   Path(uriPath).
-  Name((*routes)[routeIndex].Name + formatHandler.Extension).
+  Name(route.Name + formatHandler.Extension).
   Handler(handler)
 
   // Setup a regular expression for "{_text_}" URL parameters.
@@ -346,7 +406,7 @@ func createRouteHelper(router *mux.Router, routes *Routes,
   router.
   Methods("OPTIONS").
   Path(uriPath).
-  Name((*routes)[routeIndex].Name + formatHandler.Extension).
+  Name(route.Name + formatHandler.Extension).
   Handler(http.HandlerFunc(
     func(w http.ResponseWriter, r *http.Request) {
       index := 0
@@ -362,7 +422,7 @@ func createRouteHelper(router *mux.Router, routes *Routes,
       }
 
       if (ok) {
-        if output, e := json.Marshal((*routes)[index]); e != nil {
+        if output, e := json.Marshal((*routes)[index].Route()); e != nil {
           err := NewErrorMessageWithBase(ErrorMarshalJSON, e)
           reportJSONError(w, *err)
         } else {
@@ -380,6 +440,21 @@ func createRouteHelper(router *mux.Router, routes *Routes,
     }))
 }
 
+/////////////////////////////////////////////////
+// Middleware to set the X-CSRF-Token, if needed
+var safeMethods = []string {"GET", "HEAD", "OPTIONS", "TRACE"}
+func setCSRFTokenMiddleware(w http.ResponseWriter, r *http.Request, next http.HandlerFunc) {
+  // First check if we enabled CSRF validation
+  if gServer.CSRFKey != "" {
+    if Contains(safeMethods, r.Method) && r.Header.Get("X-CSRF-Token") == "" {
+      // Get the token and pass it in the CSRF header. Our JSON-speaking client
+      // or JavaScript framework can now read the header and return the token in
+      // in its own "X-CSRF-Token" request header on the subsequent POST.
+      w.Header().Set("X-CSRF-Token", csrf.Token(r))
+    }
+  }
+  next(w, r)
+}
 
 /////////////////////////////////////////////////
 // Middleware to ensure the DB instance exists.
@@ -432,7 +507,7 @@ func addCORSheaders(w http.ResponseWriter) {
                   Authorization`)
   w.Header().Set("Access-Control-Allow-Origin", "*")
 
-  w.Header().Set("Access-Control-Expose-Headers","Link, X-Total-Count")
+  w.Header().Set("Access-Control-Expose-Headers","Link, X-Total-Count, X-CSRF-Token")
 }
 
 /////////////////////////////////////////////////

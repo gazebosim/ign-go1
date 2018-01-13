@@ -20,6 +20,11 @@ import (
 
 var router *mux.Router
 
+// Exported var to hold the CSRFToken to use in requests
+var CSRFToken string
+// Exported var to hold the secure Cookie to use in requests
+var Cookie string
+
 // FileDesc describes a file to be created. It is used by
 // func CreateTmpFolderWithContents and sendMultipartPOST.
 // Fields:
@@ -71,6 +76,7 @@ func SendMultipartPOST(testName string, t *testing.T, uri string, jwt string,
   }
   // Adds the "Content-Type: multipart/form-data" header.
   req.Header.Add("Content-Type", writer.FormDataContentType())
+  SetupCSRFToken(req)
 
   if jwt != "" {
     // Add the authorization token
@@ -97,6 +103,33 @@ func SendMultipartPOST(testName string, t *testing.T, uri string, jwt string,
   return
 }
 
+// ReadAndSetCSRFToken is a helper function to make a GET request to a given
+// URI and read the returned CSRF token and cookie for future use.
+func ReadAndSetCSRFToken(uri string) {
+  req, _ := http.NewRequest("GET", uri, nil)
+  respRec := httptest.NewRecorder()
+  router.ServeHTTP(respRec, req)
+  // Get the token
+  csrf := respRec.Header().Get("X-CSRF-Token")
+  if csrf != "" {
+    CSRFToken = csrf
+  }
+  cookie := respRec.Header().Get("Set-Cookie")
+  if cookie != "" {
+    Cookie = cookie
+  }
+}
+
+// SetupCSRFToken installs a the igntest.CSRFToken and
+// igntest.Cookie into the Request
+func SetupCSRFToken(req *http.Request) {
+  if CSRFToken != "" {
+    req.Header.Set("X-CSRF-Token", CSRFToken)
+  }
+  if Cookie != "" {
+    req.Header.Set("Cookie", Cookie)
+  }
+}
 
 // CreateTmpFolderWithContents creates a tmp folder with the given files and
 // returns the path to the created folder. See type fileDesc above.
@@ -189,6 +222,8 @@ func AssertRouteMultipleArgs(method string, route string, body *bytes.Buffer, co
     t.Fatal("Request failed!")
     return &b, ok
   }
+
+  SetupCSRFToken(req)
 
   // Process the request
   respRec := httptest.NewRecorder()

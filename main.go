@@ -8,6 +8,7 @@ import (
   "io/ioutil"
   "log"
   "net/http"
+  "strconv"
   "time"
   "github.com/gorilla/mux"
   "github.com/jinzhu/gorm"
@@ -39,6 +40,12 @@ type Server struct {
 
   // IsTest is true when tests are running.
   IsTest bool
+
+  // IsDevelopment should be false when in production/staging
+  // Default value: false
+  IsDevelopment bool
+
+  CSRFKey string
 
   /// Auth0 public key used for token validation
   auth0RsaPublickey string
@@ -146,6 +153,29 @@ func (s *Server) readPropertiesFromEnvVars() error {
   if s.DbConfig.Name, err = ReadEnvVar("IGN_DB_NAME"); err != nil {
     log.Printf("Missing IGN_DB_NAME env variable." +
                "Database connection will not work")
+  }
+
+  // Get the IsDevelopment flag. Default: false
+  var val string
+  if val, err = ReadEnvVar("IGN_IS_DEVELOPMENT"); err != nil {
+    log.Printf("Missing IGN_IS_DEVELOPMENT env variable. " +
+               "Server will be set in PRODUCTION mode")
+    val = "false"
+  }
+  var b bool
+  if b, err = strconv.ParseBool(val); err != nil {
+    log.Printf("Error parsing IGN_IS_DEVELOPMENT env variable. " +
+      "Server will be set in PRODUCTION mode")
+    s.IsDevelopment = false
+  } else {
+    s.IsDevelopment = b
+  }
+
+  // Get the CSRF Key
+  if s.CSRFKey, err = ReadEnvVar("IGN_CSRF_KEY"); err != nil {
+    log.Printf("Missing IGN_CSRF_KEY env variable." +
+               "CSRF won't be enabled")
+     s.CSRFKey = ""
   }
 
   return nil
