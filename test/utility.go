@@ -20,9 +20,9 @@ import (
 
 var router *mux.Router
 
-// Exported var to hold the CSRFToken to use in requests
+// CSRFToken - exported var to hold the CSRFToken to use in requests
 var CSRFToken string
-// Exported var to hold the secure Cookie to use in requests
+// Cookie - Exported var to hold the secure Cookie to use in requests
 var Cookie string
 
 // FileDesc describes a file to be created. It is used by

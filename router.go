@@ -81,8 +81,14 @@ type Methods []Method
 // SecureMethods is a slice of Method that require authentication.
 type SecureMethods []Method
 
+//////////////////////////////////////////
+
+// IRoute is an interface for Route and NoCSRFRoute
 type IRoute interface {
+  // IgnoreCSRF let a route notify the Router that it should not be
+  // validated against CSRF
   IgnoreCSRF() bool
+  // Route returns the underlying Route struct
   Route() Route
 }
 
@@ -106,30 +112,33 @@ type Route struct {
 
   // Secure HTTP methods supported by the route
   SecureMethods SecureMethods `json:"secure_methods"`
-
-  // CSRFIgnore to let this route bypass CSRF checks
-  // CSRFIgnore bool `json:"csrf_ignore"`
 }
+// IgnoreCSRF is an implementation of IRoute.IgnoreCSRF func
 func (r Route) IgnoreCSRF() bool {
   return false
 }
+// Route is an implementation of IRoute.Route func
 func (r Route) Route() Route {
   return r
 }
 
+// NoCSRFRoute is a route that won't be validated by CSRF middleware
 type NoCSRFRoute struct {
   R Route
 }
+// IgnoreCSRF is an implementation of IRoute.IgnoreCSRF func
 func (r NoCSRFRoute) IgnoreCSRF() bool {
   return true
 }
+// Route is an implementation of IRoute.Route func
 func (r NoCSRFRoute) Route() Route {
   return r.R
 }
 
-// Routes is an array of Route
+// Routes is an array of IRoute
 type Routes []IRoute
 
+//////////////////////////////////////////
 
 // AuthHeadersRequired is an array of Headers needed when authentication is
 // required.
