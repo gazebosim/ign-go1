@@ -11,8 +11,9 @@ pipelines:
           - go get
           - lint=$(golint ./... | grep -v ".pb.go") && if [[ ! -z $lint ]]; then echo $lint && exit 1; fi
           - go build
-          - go test -covermode=count -coverprofile=test-reports/count.out
-          - go tool cover -func=test-reports/count.out
+          - go test -covermode=atomic -coverprofile=coverage.tx
+          - go tool cover -func=coverage.tx
+          - bash <(curl -s https://codecov.io/bash)
           - go test bitbucket.org/ignitionrobotics/ign-go/test -covermode=count -coverprofile=test-reports/count-test.out
           - go tool cover -func=test-reports/count-test.out
         services:

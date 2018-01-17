@@ -5,6 +5,8 @@ common functionality for a webserver. An example webserver that utilizes
 Ignition GO is [Ignition
 Fuel](https://bitbucket.org/ignitionrobotics/ign-fuelserver).
 
+Test coverage: [![codecov](https://codecov.io/bb/ignitionrobotics/ign-go/branch/default/graph/badge.svg)](https://codecov.io/bb/ignitionrobotics/ign-go)
+
 ## Environment variables
 
 Ignition GO utilizes a set of environment variables for configuration
