@@ -195,6 +195,11 @@ func (t TypeJSONResult) ServeHTTP(w http.ResponseWriter, r *http.Request) {
     value := reflect.ValueOf(result)
     fieldValue := reflect.Indirect(value).FieldByName(t.wrapperField)
     data = fieldValue.Interface()
+    // If the underlying data is an empty slice then force the creation of
+    // an empty json `[]` as output
+    if fieldValue.Kind() == reflect.Slice && fieldValue.Len() == 0 {
+      data = make([]string, 0)
+    }
   } else {
     data = result
   }
