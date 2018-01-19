@@ -7,6 +7,7 @@ import (
   "net/http"
   "reflect"
   "regexp"
+  "sort"
   "strings"
   "time"
   "github.com/dgrijalva/jwt-go"
@@ -154,6 +155,10 @@ func NewRouter(routes Routes) *mux.Router {
       }
     }
   }
+  // NOTE: sortedREs and corsMap are private vars defined below
+  // Sorting corsMap is needed to correctly resolve OPTION requests
+  // that need to match a regex.
+  sortedREs = getSortedREs(corsMap)
 
   return router
 }
@@ -227,6 +232,9 @@ func (fn ProtoResult) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 /////////////////////////////////////////////////
 
 var corsMap = map[string]int{}
+// sortedREs keeps a sorted list of registered routes in corsMap.
+// It allows us to iterate the corsMap in 'order'.
+var sortedREs []string
 
 var pemKeyString string
 
@@ -257,6 +265,35 @@ var jwtRequiredMiddleware = jwtmiddleware.New(jwtmiddleware.Options{
     return jwt.ParseRSAPublicKeyFromPEM([]byte(pemKeyString))
   },
 })
+
+/////////////////////////////////////////////////
+// sortRE is an internal []string wrapper type used to sort by
+// the number of "[^/]+" string occurrences found in a regex (ie. count).
+// If the same count is found then the larger string will take precedence.
+type sortRE []string
+func (s sortRE) Len() int {
+  return len(s)
+}
+func (s sortRE) Swap(i, j int) {
+  s[i], s[j] = s[j], s[i]
+}
+func (s sortRE) Less(i, j int) bool {
+  ci := strings.Count(s[i], "[^/]+")
+  cj := strings.Count(s[j], "[^/]+")
+  if ci == cj {
+    return len(s[i]) > len(s[j])
+  }
+  return ci < cj
+}
+
+func getSortedREs(m map[string]int) []string {
+  var keys []string
+  for k := range m {
+    keys = append(keys, k)
+  }
+  sort.Sort(sortRE(keys))
+  return keys
+}
 
 /////////////////////////////////////////////////
 // Helper function that creates a route
@@ -300,9 +337,8 @@ func createRouteHelper(router *mux.Router, routes *Routes,
   re := regexp.MustCompile("{.+?}")
 
   // Store route information for options
-  corsMap[
-    re.ReplaceAllString(strings.Replace(uriPath, ".", "\\.", -1), "[^/]+")] =
-    routeIndex
+  reString := re.ReplaceAllString(strings.Replace(uriPath, ".", "\\.", -1), "[^/]+")
+  corsMap[reString] = routeIndex
 
   // Create the OPTIONS route handler.
   // Added the HTTP method "OPTIONS" to each route,
@@ -316,11 +352,11 @@ func createRouteHelper(router *mux.Router, routes *Routes,
       index := 0
       ok := false
       // Find the matching URL
-      for key, value := range corsMap {
+      for _, key := range sortedREs {
         // Make sure the regular expression matches the complete URL path
         if regexp.MustCompile(key).FindString(r.URL.Path) == r.URL.Path {
           ok = true
-          index = value
+          index = corsMap[key]
           break
         }
       }
@@ -343,6 +379,7 @@ func createRouteHelper(router *mux.Router, routes *Routes,
       reportJSONError(w, err)
     }))
 }
+
 
 /////////////////////////////////////////////////
 // Middleware to ensure the DB instance exists.
@@ -384,7 +421,6 @@ func addCORSheadersMiddleware(w http.ResponseWriter, r *http.Request,
 
 // addCORSheaders adds the required Access Control headers to the HTTP response
 func addCORSheaders(w http.ResponseWriter) {
-
   w.Header().Set("Access-Control-Allow-Methods",
                  "GET, HEAD, POST, PUT, PATCH, DELETE")
 
