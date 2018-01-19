@@ -11,8 +11,8 @@ pipelines:
           - go get
           - lint=$(golint ./... | grep -v ".pb.go") && if [[ ! -z $lint ]]; then echo $lint && exit 1; fi
           - go build
-          - go test
-          - go test bitbucket.org/ignitionrobotics/ign-go/test
+          - bash coverage.sh
+          - bash <(curl -s https://codecov.io/bash)
         services:
           - database
 
