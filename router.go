@@ -321,8 +321,8 @@ func createRouteHelper(router *mux.Router, routes *Routes,
   handler = negroni.New(
     negroni.HandlerFunc(panicRecoveryMiddleware),
     negroni.HandlerFunc(requireDBMiddleware),
-    authMiddleware,
     negroni.HandlerFunc(addCORSheadersMiddleware),
+    authMiddleware,
     negroni.Wrap(http.Handler(handler)),
   )
 
