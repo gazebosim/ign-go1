@@ -17,7 +17,7 @@ import (
   "github.com/gorilla/mux"
 )
 
-
+const retryHandlerSleep = time.Second
 // Detail stores information about a paramter.
 type Detail struct {
   Type        string `json:"type"`
@@ -165,19 +165,44 @@ func NewRouter(routes Routes) *mux.Router {
 
 // JSONResult provides JSON serialization for handler results
 func JSONResult(handler HandlerWithResult) TypeJSONResult {
-  return TypeJSONResult{"", handler}
+  return TypeJSONResult{"", createRetryHandlerWithRes(handler)}
 }
 
 // JSONListResult provides JSON serialization for handler results that are
 // slices of objects.
 func JSONListResult(wrapper string, handler HandlerWithResult) TypeJSONResult {
-  return TypeJSONResult{wrapper, handler}
+  return TypeJSONResult{wrapper, createRetryHandlerWithRes(handler)}
+}
+
+// createRetryHandlerWithRes is a helper function to create a wrapper on top of handlers
+// to retry the operation if there is a "too many connections" error from db.
+func createRetryHandlerWithRes(handler HandlerWithResult) HandlerWithResult {
+  return func(w http.ResponseWriter, r *http.Request) (interface{}, *ErrMsg) {
+    res, err := handler(w, r)
+    if err != nil {
+      // naive approach - retry operation after sleep
+      if err.BaseError != nil && err.BaseError.Error() == "Error 1040: Too many connections" {
+        fmt.Println("Retrying operation after 'Error 1040: Too many connections'")
+        time.Sleep(retryHandlerSleep)
+        res, err = handler(w, r)
+      }
+    }
+    return res, err
+  }
 }
 
 /////////////////////////////////////////////////
 func (fn Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
   if err := fn(w, r); err != nil {
-    reportJSONError(w, *err)
+    // naive approach - retry operation after sleep
+    if err.BaseError != nil && err.BaseError.Error() == "Error 1040: Too many connections" {
+      fmt.Println("Retrying operation after 'Error 1040: Too many connections'")
+      time.Sleep(retryHandlerSleep)
+      err = fn(w, r)
+    }
+    if err != nil {
+      reportJSONError(w, *err)
+    }
   }
 }
 
