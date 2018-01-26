@@ -185,8 +185,16 @@ func (fn Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 func (t TypeJSONResult) ServeHTTP(w http.ResponseWriter, r *http.Request) {
   result, err := t.fn(w, r)
   if err != nil {
-    reportJSONError(w, *err)
-    return
+    // naive approach - retry operation after sleep
+    if err.BaseError != nil && err.BaseError.Error() == "Error 1040: Too many connections" {
+      fmt.Println("Retrying operation after 'Error 1040: Too many connections'")
+      time.Sleep(time.Second * 1)
+      result, err = t.fn(w, r)
+    }
+    if err != nil {
+      reportJSONError(w, *err)
+      return
+    }
   }
 
   var data interface{}
@@ -216,8 +224,16 @@ func (t TypeJSONResult) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 func (fn ProtoResult) ServeHTTP(w http.ResponseWriter, r *http.Request) {
   result, err := fn(w, r)
   if err != nil {
-    reportJSONError(w, *err)
-    return
+    // naive approach - retry operation after sleep
+    if err.BaseError != nil && err.BaseError.Error() == "Error 1040: Too many connections" {
+      fmt.Println("Retrying operation after 'Error 1040: Too many connections'")
+      time.Sleep(time.Second * 1)
+      result, err = fn(w, r)
+    }
+    if err != nil {
+      reportJSONError(w, *err)
+      return
+    }
   }
 
   // Marshal the protobuf data and write it out.
