@@ -342,9 +342,12 @@ func createRouteHelper(router *mux.Router, routes *Routes,
     authMiddleware = negroni.HandlerFunc(jwtRequiredMiddleware.HandlerWithNext)
   }
 
+  recovery := negroni.NewRecovery()
+  recovery.PrintStack = false
+
   // Configure middlewares chain
   handler = negroni.New(
-    negroni.HandlerFunc(panicRecoveryMiddleware),
+    recovery,
     negroni.HandlerFunc(requireDBMiddleware),
     negroni.HandlerFunc(addCORSheadersMiddleware),
     authMiddleware,
@@ -423,23 +426,6 @@ func requireDBMiddleware(w http.ResponseWriter, r *http.Request,
   } else {
     next(w, r)
   }
-}
-
-/////////////////////////////////////////////////
-// Panic-Recover middleware to avoid Crashing the server
-// on unexpected panicking.
-// See https://blog.golang.org/defer-panic-and-recover
-func panicRecoveryMiddleware(w http.ResponseWriter, r *http.Request,
-                          next http.HandlerFunc) {
-
-  defer func() {
-    if err := recover(); err != nil {
-      log.Printf("Recovered from panic: %+v", err)
-      http.Error(w, http.StatusText(500), 500)
-    }
-  }()
-
-  next(w, r)
 }
 
 /////////////////////////////////////////////////
