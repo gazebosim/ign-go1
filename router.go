@@ -343,6 +343,7 @@ func createRouteHelper(router *mux.Router, routes *Routes,
   }
 
   recovery := negroni.NewRecovery()
+  // PrintStack is set to false to avoid sending stacktrace to client.
   recovery.PrintStack = false
 
   // Configure middlewares chain
