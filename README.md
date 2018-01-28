@@ -20,6 +20,7 @@ purposes.
 1. **IGN_DB_PASSWORD** : Password for the database connection.
 1. **IGN_DB_ADDRESS** : URL address for the database server.
 1. **IGN_DB_NAME** : Name of the database to use on the database sever.
+1. **IGN_DB_MAX_OPEN_CONNS** : Max number of open connections in connections pool.
 
 ## Testing with Ignition GO
 
