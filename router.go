@@ -518,32 +518,21 @@ func logger(inner http.Handler, name string) http.Handler {
 func newGaEventTracking(routeName string) negroni.HandlerFunc {
   return func(w http.ResponseWriter, r *http.Request, next http.HandlerFunc) {
     next(w, r)
-    fmt.Println("PATO en event tracking")
-    c, err := ga.NewClient("UA-113330715-1")
-    if err != nil {
-      fmt.Println("PATO error1", err)
+
+    // Now track event with GA, if enabled
+    if gServer.GaAppName == "" || gServer.GaTrackingID == "" {
       return
     }
-    c.DataSource("ign-fuelserver")
-    c.ApplicationName("test-fuelserver")
-    c.ApplicationVersion("1.0")
-    // c.UserID("USERNAME")
-    // c.DocumentLocationURL(r.URL.String())
-    // v := url.Values{}
-    // v.Set("v", "1")
-    // v.Set("tid", "UA-XXXX-Y")
-    // v.Set("ds", "ign-fuelserver")
-    // v.Set("uid", "USERNAME")
-    // v.Set("aid", "osrf.ign-fuelserver")
-    // v.Set("av", "1.0")
-    // v.Set("dl", r.URL)
-    // v.Set("ec", routeName)
-    // v.Set("ea", r.Method)
+    c, err := ga.NewClient(gServer.GaTrackingID)
+    if err != nil {
+      fmt.Println("Error creating GA client", err)
+      return
+    }
+    c.DataSource(gServer.GaAppName)
+    c.ApplicationName(gServer.GaAppName)
     e := ga.NewEvent(routeName, r.Method).Label(r.URL.String())
     if err := c.Send(e); err != nil {
-      fmt.Println("PATO error2", err)
-    } else {
-      fmt.Printf("[Router] Event sent to GA %%v %%v", e, c)
+      fmt.Println("Error while sending event to GA", err)
     }
   }
 }

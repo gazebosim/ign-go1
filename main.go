@@ -42,6 +42,12 @@ type Server struct {
 
   /// Auth0 public key used for token validation
   auth0RsaPublickey string
+
+  // Google Analytics tracking ID
+  GaTrackingID  string
+
+  // Google Analytics Application Name
+  GaAppName string
 }
 
 // DatabaseConfig contains information about a database connection
@@ -122,6 +128,14 @@ func (s *Server) readPropertiesFromEnvVars() error {
   if s.SSLKey, err = ReadEnvVar("IGN_SSL_KEY"); err != nil {
     log.Printf("Missing IGN_SSL_KEY env variable. " +
                "Server will not be secure (no https).")
+  }
+
+  // Read Google Analytics parameters
+  if s.GaTrackingID, err = ReadEnvVar("IGN_GA_TRACKING_ID"); err != nil {
+    log.Printf("Missing IGN_GA_TRACKING_ID env variable. GA will not be enabled")
+  }
+  if s.GaAppName, err = ReadEnvVar("IGN_GA_APP_NAME"); err != nil {
+    log.Printf("Missing IGN_GA_APP_NAME env variable. GA will not be enabled")
   }
 
   // Get the database username

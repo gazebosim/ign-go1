@@ -22,6 +22,8 @@ purposes.
 1. **IGN_DB_NAME** : Name of the database to use on the database sever.
 1. **IGN_GA_TRACKING_ID** : Google Analytics Tracking ID to use. If not set,
 then GA will not be enabled.
+1. **IGN_GA_APP_NAME** : Google Analytics Application Name. If not set,
+then GA will not be enabled.
 
 ## Testing with Ignition GO
 
