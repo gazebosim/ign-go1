@@ -26,6 +26,8 @@ A value <= 0 means unlimited connections.
 then GA will not be enabled. The format is UA-XXXX-Y.
 1. **IGN_GA_APP_NAME** : Google Analytics Application Name. If not set,
 then GA will not be enabled.
+1. **IGN_GA_CAT_PREFIX** : (optional) A string to use as a prefix to
+Google Analytics Event Category.
 
 ## Testing with Ignition GO
 

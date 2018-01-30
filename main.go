@@ -49,6 +49,9 @@ type Server struct {
 
   // Google Analytics Application Name
   GaAppName string
+
+  // (optional) A string to use as a prefix to GA Event Category.
+  GaCategoryPrefix  string
 }
 
 // DatabaseConfig contains information about a database connection
@@ -141,6 +144,9 @@ func (s *Server) readPropertiesFromEnvVars() error {
   }
   if s.GaAppName, err = ReadEnvVar("IGN_GA_APP_NAME"); err != nil {
     log.Printf("Missing IGN_GA_APP_NAME env variable. GA will not be enabled")
+  }
+  if s.GaCategoryPrefix, err = ReadEnvVar("IGN_GA_CAT_PREFIX"); err != nil {
+    log.Printf("Missing optional IGN_GA_CAT_PREFIX env variable.")
   }
 
   // Get the database username

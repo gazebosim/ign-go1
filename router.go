@@ -532,7 +532,9 @@ func newGaEventTracking(routeName string) negroni.HandlerFunc {
     }
     c.DataSource(gServer.GaAppName)
     c.ApplicationName(gServer.GaAppName)
-    e := ga.NewEvent(routeName, r.Method).Label(r.URL.String())
+    cat := gServer.GaCategoryPrefix + routeName
+    action := r.Method
+    e := ga.NewEvent(cat, action).Label(r.URL.String())
     if err := c.Send(e); err != nil {
       fmt.Println("Error while sending event to GA", err)
     }
