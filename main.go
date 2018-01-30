@@ -44,7 +44,7 @@ type Server struct {
   /// Auth0 public key used for token validation
   auth0RsaPublickey string
 
-  // Google Analytics tracking ID
+  // Google Analytics tracking ID. The format is UA-XXXX-Y
   GaTrackingID  string
 
   // Google Analytics Application Name
