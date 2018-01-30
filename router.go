@@ -513,13 +513,15 @@ func logger(inner http.Handler, name string) http.Handler {
 }
 
 /////////////////////////////////////////////////
-// gaEventTracking is a middleware to send events in Google Analytics.
+// gaEventTracking is a middleware to send events to Google Analytics.
 // Events will be automatically created using route information.
+// This middleware requires IGN_GA_TRACKING_ID and IGN_GA_APP_NAME
+// env vars.
 func newGaEventTracking(routeName string) negroni.HandlerFunc {
   return func(w http.ResponseWriter, r *http.Request, next http.HandlerFunc) {
     next(w, r)
 
-    // Now track event with GA, if enabled
+    // Track event with GA, if enabled
     if gServer.GaAppName == "" || gServer.GaTrackingID == "" {
       return
     }
