@@ -55,8 +55,9 @@ type DatabaseConfig struct {
   Address string
   // Name of the database.
   Name string
-  // Allowed Max Open Connections
-  // See https://golang.org/src/database/sql/sql.go
+  // Allowed Max Open Connections.
+  // A value <= 0 means unlimited connections.
+  // See 'https://golang.org/src/database/sql/sql.go'
   MaxOpenConns int
 }
 
@@ -156,16 +157,16 @@ func (s *Server) readPropertiesFromEnvVars() error {
   var maxStr string
   if maxStr, err = ReadEnvVar("IGN_DB_MAX_OPEN_CONNS"); err != nil {
     log.Printf("Missing IGN_DB_MAX_OPEN_CONNS env variable." +
-               "Database max open connections will not be set," +
-              "with risk of getting 'too many connections' error.")
+               "Database max open connections will be set to unlimited," +
+              "with the risk of getting 'too many connections' error.")
     s.DbConfig.MaxOpenConns = 0
   } else {
     var i int64
     i, err = strconv.ParseInt(maxStr, 10, 32)
-    if err != nil || i == 0 {
+    if err != nil || i <= 0 {
       log.Printf("Error parsing IGN_DB_MAX_OPEN_CONNS env variable." +
-          "Database max open connections will not be set," +
-          "with risk of getting 'too many connections' error.")
+          "Database max open connections will be set to unlimited," +
+          "with the risk of getting 'too many connections' error.")
         s.DbConfig.MaxOpenConns = 0
     } else {
       s.DbConfig.MaxOpenConns = int(i)
