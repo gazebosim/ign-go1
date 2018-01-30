@@ -10,11 +10,12 @@ import (
   "sort"
   "strings"
   "time"
-  "github.com/dgrijalva/jwt-go"
-  "github.com/codegangsta/negroni"
   "github.com/auth0/go-jwt-middleware"
+  "github.com/codegangsta/negroni"
+  "github.com/dgrijalva/jwt-go"
   "github.com/golang/protobuf/proto"
   "github.com/gorilla/mux"
+  "github.com/jpillora/go-ogle-analytics"
 )
 
 const retryHandlerSleep = time.Second
@@ -342,17 +343,20 @@ func createRouteHelper(router *mux.Router, routes *Routes,
     authMiddleware = negroni.HandlerFunc(jwtRequiredMiddleware.HandlerWithNext)
   }
 
+  routeName := (*routes)[routeIndex].Name
+
   // Configure middlewares chain
   handler = negroni.New(
     negroni.HandlerFunc(panicRecoveryMiddleware),
     negroni.HandlerFunc(requireDBMiddleware),
     negroni.HandlerFunc(addCORSheadersMiddleware),
     authMiddleware,
+    negroni.HandlerFunc(newGaEventTracking(routeName)),
     negroni.Wrap(http.Handler(handler)),
   )
 
   // Last, wrap everything with a Logger middleware
-  handler = logger(handler, (*routes)[routeIndex].Name)
+  handler = logger(handler, routeName)
 
   uriPath := (*routes)[routeIndex].URI + formatHandler.Extension
 
@@ -360,7 +364,7 @@ func createRouteHelper(router *mux.Router, routes *Routes,
   router.
   Methods(methodType).
   Path(uriPath).
-  Name((*routes)[routeIndex].Name + formatHandler.Extension).
+  Name(routeName + formatHandler.Extension).
   Handler(handler)
 
   // Setup a regular expression for "{_text_}" URL parameters.
@@ -376,7 +380,7 @@ func createRouteHelper(router *mux.Router, routes *Routes,
   router.
   Methods("OPTIONS").
   Path(uriPath).
-  Name((*routes)[routeIndex].Name + formatHandler.Extension).
+  Name(routeName + formatHandler.Extension).
   Handler(http.HandlerFunc(
     func(w http.ResponseWriter, r *http.Request) {
       index := 0
@@ -506,4 +510,40 @@ func logger(inner http.Handler, name string) http.Handler {
       time.Since(start),
     )
   })
+}
+
+/////////////////////////////////////////////////
+// gaEventTracking is a middleware to send events in Google Analytics.
+// Events will be automatically created using route information.
+func newGaEventTracking(routeName string) negroni.HandlerFunc {
+  return func(w http.ResponseWriter, r *http.Request, next http.HandlerFunc) {
+    next(w, r)
+    fmt.Println("PATO en event tracking")
+    c, err := ga.NewClient("UA-113330715-1")
+    if err != nil {
+      fmt.Println("PATO error1", err)
+      return
+    }
+    c.DataSource("ign-fuelserver")
+    c.ApplicationName("test-fuelserver")
+    c.ApplicationVersion("1.0")
+    // c.UserID("USERNAME")
+    // c.DocumentLocationURL(r.URL.String())
+    // v := url.Values{}
+    // v.Set("v", "1")
+    // v.Set("tid", "UA-XXXX-Y")
+    // v.Set("ds", "ign-fuelserver")
+    // v.Set("uid", "USERNAME")
+    // v.Set("aid", "osrf.ign-fuelserver")
+    // v.Set("av", "1.0")
+    // v.Set("dl", r.URL)
+    // v.Set("ec", routeName)
+    // v.Set("ea", r.Method)
+    e := ga.NewEvent(routeName, r.Method).Label(r.URL.String())
+    if err := c.Send(e); err != nil {
+      fmt.Println("PATO error2", err)
+    } else {
+      fmt.Printf("[Router] Event sent to GA %%v %%v", e, c)
+    }
+  }
 }
