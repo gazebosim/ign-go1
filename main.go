@@ -8,6 +8,7 @@ import (
   "io/ioutil"
   "log"
   "net/http"
+  "strconv"
   "time"
   "github.com/gorilla/mux"
   "github.com/jinzhu/gorm"
@@ -54,6 +55,10 @@ type DatabaseConfig struct {
   Address string
   // Name of the database.
   Name string
+  // Allowed Max Open Connections.
+  // A value <= 0 means unlimited connections.
+  // See 'https://golang.org/src/database/sql/sql.go'
+  MaxOpenConns int
 }
 
 // gServer is an internal pointer to the Server.
@@ -148,6 +153,26 @@ func (s *Server) readPropertiesFromEnvVars() error {
                "Database connection will not work")
   }
 
+  // Get the database max open conns
+  var maxStr string
+  if maxStr, err = ReadEnvVar("IGN_DB_MAX_OPEN_CONNS"); err != nil {
+    log.Printf("Missing IGN_DB_MAX_OPEN_CONNS env variable." +
+               "Database max open connections will be set to unlimited," +
+              "with the risk of getting 'too many connections' error.")
+    s.DbConfig.MaxOpenConns = 0
+  } else {
+    var i int64
+    i, err = strconv.ParseInt(maxStr, 10, 32)
+    if err != nil || i <= 0 {
+      log.Printf("Error parsing IGN_DB_MAX_OPEN_CONNS env variable." +
+          "Database max open connections will be set to unlimited," +
+          "with the risk of getting 'too many connections' error.")
+        s.DbConfig.MaxOpenConns = 0
+    } else {
+      s.DbConfig.MaxOpenConns = int(i)
+    }
+  }
+
   return nil
 }
 
@@ -228,6 +253,13 @@ func (s *Server) dbInit() (error) {
     s.Db.LogMode(flag.Lookup("test.v").Value.String() != "false")
   } else {
     s.Db.LogMode(true)
+  }
+
+  // Set max open connections in pool. Other requests will be automatically queued
+  // by go/sql. See https://golang.org/src/database/sql/sql.go
+  if s.DbConfig.MaxOpenConns != 0 {
+    log.Println("Setting DB Max Open Conns", s.DbConfig.MaxOpenConns)
+    s.Db.DB().SetMaxOpenConns(s.DbConfig.MaxOpenConns)
   }
 
   return nil
