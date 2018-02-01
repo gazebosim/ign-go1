@@ -31,7 +31,7 @@ type FileDesc struct {
   Contents string
 }
 
-// Setup helper function
+// SetupTest - helper function for test setup
 func SetupTest(_router *mux.Router) {
   router = _router
 }
