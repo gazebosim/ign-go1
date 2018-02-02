@@ -22,6 +22,12 @@ purposes.
 1. **IGN_DB_NAME** : Name of the database to use on the database sever.
 1. **IGN_DB_MAX_OPEN_CONNS** : Max number of open connections in connections pool.
 A value <= 0 means unlimited connections.
+1. **IGN_GA_TRACKING_ID** : Google Analytics Tracking ID to use. If not set,
+then GA will not be enabled. The format is UA-XXXX-Y.
+1. **IGN_GA_APP_NAME** : Google Analytics Application Name. If not set,
+then GA will not be enabled.
+1. **IGN_GA_CAT_PREFIX** : (optional) A string to use as a prefix to
+Google Analytics Event Category.
 
 ## Testing with Ignition GO
 

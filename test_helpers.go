@@ -1,4 +1,4 @@
-package igntest
+package ign
 
 import (
   "encoding/json"
@@ -15,7 +15,6 @@ import (
   "sort"
   "strings"
   "github.com/gorilla/mux"
-  "bitbucket.org/ignitionrobotics/ign-go"
 )
 
 var router *mux.Router
@@ -32,8 +31,8 @@ type FileDesc struct {
   Contents string
 }
 
-// Setup helper function
-func Setup(_router *mux.Router) {
+// SetupTest - helper function for test setup
+func SetupTest(_router *mux.Router) {
   router = _router
 }
 
@@ -219,7 +218,7 @@ func AssertRouteMultipleArgs(method string, route string, body *bytes.Buffer, co
 // AssertBackendErrorCode is a function that tries to unmarshal a backend's
 // ErrMsg and compares to given ErrCode
 func AssertBackendErrorCode(testName string, bslice *[]byte, errCode int, t *testing.T) {
-  var errMsg ign.ErrMsg
+  var errMsg ErrMsg
   if err := json.Unmarshal(*bslice, &errMsg); err != nil {
     t.Fatal("Unable to unmarshal bytes slice", testName, err, string(*bslice))
     return

@@ -1,9 +1,8 @@
-package igntest
+package ign
 
 import (
   "strings"
   "testing"
-  "bitbucket.org/ignitionrobotics/ign-go"
 )
 
 // Tests for utility file
@@ -22,7 +21,7 @@ func TestStrToSlice(t *testing.T) {
   }
 
   for _, i := range inputs {
-    got := ign.StrToSlice(i.input)
+    got := StrToSlice(i.input)
     for _,s := range got {
       t.Log("got:", strings.Replace(s, " ","%s",-1))
     }
