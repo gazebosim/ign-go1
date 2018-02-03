@@ -13,6 +13,7 @@ import (
   "path/filepath"
   "regexp"
   "runtime"
+  "sort"
   "strconv"
   "strings"
   "time"
@@ -170,4 +171,31 @@ func StrToSlice(tagsStr string) ([]string) {
     }
   }
   return result
+}
+
+// SameElements returns True if the two given string slices contain the same
+// elements, even in different order.
+func SameElements(a0, b0 []string) bool {
+  // shallow copy input arrays
+  a := append([]string(nil), a0...)
+  b := append([]string(nil), b0...)
+
+  if a == nil && b == nil {
+    return true
+  }
+  if a == nil || b == nil {
+    return false
+  }
+  if len(a) != len(b) {
+    return false
+  }
+
+  sort.Strings(a)
+  sort.Strings(b)
+  for i := range a {
+    if a[i] != b[i] {
+      return false
+    }
+  }
+  return true
 }

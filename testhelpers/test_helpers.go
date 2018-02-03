@@ -1,4 +1,8 @@
-package ign
+package igntest
+
+// Important note: functions in this module should NOT include
+// references to parent package 'ign', to avoid circular dependencies.
+// These functions should be independent.
 
 import (
   "encoding/json"
@@ -12,7 +16,6 @@ import (
   "path/filepath"
   "io/ioutil"
   "testing"
-  "sort"
   "strings"
   "github.com/gorilla/mux"
 )
@@ -31,7 +34,7 @@ type FileDesc struct {
   Contents string
 }
 
-// SetupTest - helper function for test setup
+// SetupTest - Setup helper function
 func SetupTest(_router *mux.Router) {
   router = _router
 }
@@ -216,47 +219,22 @@ func AssertRouteMultipleArgs(method string, route string, body *bytes.Buffer, co
 }
 
 // AssertBackendErrorCode is a function that tries to unmarshal a backend's
-// ErrMsg and compares to given ErrCode
+// ErrMsg and compares to given error code
 func AssertBackendErrorCode(testName string, bslice *[]byte, errCode int, t *testing.T) {
-  var errMsg ErrMsg
+  var errMsg interface{}
   if err := json.Unmarshal(*bslice, &errMsg); err != nil {
     t.Fatal("Unable to unmarshal bytes slice", testName, err, string(*bslice))
     return
   }
-  if errMsg.ErrCode != errCode {
-    t.Fatal("[ErrCode] is different than [expected code]", testName, errMsg.ErrCode, errCode, string(*bslice))
+  em := errMsg.(map[string]interface{})
+  gotCode := em["errcode"].(float64)
+  if int(gotCode) != errCode {
+    t.Fatal("[errcode] is different than [expected code]", testName, gotCode, errCode, string(*bslice))
     return
   }
-  if errMsg.ErrID == "" {
-    t.Fatal("ErrMsg ErrID is empty but it should not", testName,
+  if _, ok := em["errid"]; !ok {
+    t.Fatal("ErrMsg 'errid' is empty but it should not", testName,
             string(*bslice))
     return
   }
-}
-
-// SameElements returns True if the two given string slices contain the same
-// elements, even in different order.
-func SameElements(a0, b0 []string) bool {
-  // shallow copy input arrays
-  a := append([]string(nil), a0...)
-  b := append([]string(nil), b0...)
-
-  if a == nil && b == nil {
-    return true
-  }
-  if a == nil || b == nil {
-    return false
-  }
-  if len(a) != len(b) {
-    return false
-  }
-
-  sort.Strings(a)
-  sort.Strings(b)
-  for i := range a {
-    if a[i] != b[i] {
-      return false
-    }
-  }
-  return true
 }
